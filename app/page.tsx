@@ -261,65 +261,76 @@ export default function Home() {
           )}
         </div>
 
-        {/* 副業タイムカード */}
+        {/* 副業記録カード */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            副業記録
+          </h1>
+          
+          <p className="text-sm text-gray-500 mb-6">
+            {today}
+          </p>
+
+          <form onSubmit={handleSideJobSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="minutes" className="block text-sm font-medium text-gray-700 mb-2">
+                実施時間 (分)
+              </label>
+              <input
+                id="minutes"
+                type="number"
+                value={sideJobMinutes}
+                onChange={(e) => setSideJobMinutes(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                placeholder="30"
+                disabled={sideJobLoading}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-2">
+                メモ (任意)
+              </label>
+              <textarea
+                id="memo"
+                value={sideJobMemo}
+                onChange={(e) => setSideJobMemo(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="ブログ記事執筆..."
+                rows={2}
+                disabled={sideJobLoading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={sideJobLoading}
+              className="w-full bg-blue-600 text-white py-3 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              {sideJobLoading ? '保存中...' : '保存'}
+            </button>
+          </form>
+
+          {sideJobMessage && (
+            <div className={`mt-4 p-3 rounded-md ${
+              sideJobMessage.includes('失敗') || sideJobMessage.includes('エラー')
+                ? 'bg-red-50 text-red-700'
+                : 'bg-green-50 text-green-700'
+            }`}>
+              {sideJobMessage}
+            </div>
+          )}
+        </div>
+
+        {/* 副業タイム警告 */}
         {showSideJob && (
           <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-yellow-900 mb-2 flex items-center gap-2">
               ⚠️ 副業タイム
             </h2>
-            <p className="text-yellow-800 mb-4">
-              今日は副業30分
+            <p className="text-yellow-800">
+              体重が増加しました！今日は副業30分を実施しましょう
             </p>
-
-            <form onSubmit={handleSideJobSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="minutes" className="block text-sm font-medium text-yellow-900 mb-2">
-                  実施時間 (分)
-                </label>
-                <input
-                  id="minutes"
-                  type="number"
-                  value={sideJobMinutes}
-                  onChange={(e) => setSideJobMinutes(e.target.value)}
-                  className="w-full px-4 py-2 border border-yellow-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                  placeholder="30"
-                  disabled={sideJobLoading}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="memo" className="block text-sm font-medium text-yellow-900 mb-2">
-                  メモ (任意)
-                </label>
-                <textarea
-                  id="memo"
-                  value={sideJobMemo}
-                  onChange={(e) => setSideJobMemo(e.target.value)}
-                  className="w-full px-4 py-2 border border-yellow-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                  placeholder="ブログ記事執筆..."
-                  rows={2}
-                  disabled={sideJobLoading}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={sideJobLoading}
-                className="w-full bg-yellow-600 text-white py-3 rounded-md font-medium hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-              >
-                {sideJobLoading ? '保存中...' : '副業を記録'}
-              </button>
-            </form>
-
-            {sideJobMessage && (
-              <div className={`mt-4 p-3 rounded-md ${
-                sideJobMessage.includes('失敗') || sideJobMessage.includes('エラー')
-                  ? 'bg-red-50 text-red-700'
-                  : 'bg-green-50 text-green-700'
-              }`}>
-                {sideJobMessage}
-              </div>
-            )}
           </div>
         )}
 
