@@ -193,12 +193,7 @@ export default function Home() {
   const diff = getDiff()
 
   const formatMinutes = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    if (hours > 0) {
-      return `${hours}時間${mins > 0 ? mins + '分' : ''}`
-    }
-    return `${mins}分`
+    return `${minutes}分`
   }
 
   return (
