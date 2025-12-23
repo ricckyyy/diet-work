@@ -279,6 +279,7 @@ export default function Home() {
               <input
                 id="minutes"
                 type="number"
+                min="0"
                 value={sideJobMinutes}
                 onChange={(e) => setSideJobMinutes(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
@@ -295,6 +296,7 @@ export default function Home() {
                 id="memo"
                 value={sideJobMemo}
                 onChange={(e) => setSideJobMemo(e.target.value)}
+                maxLength={200}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="ブログ記事執筆..."
                 rows={2}
