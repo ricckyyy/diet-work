@@ -192,6 +192,7 @@ export default function Home() {
 
   const diff = getDiff()
 
+  // 分単位で表示（時間への自動変換なし）
   const formatMinutes = (minutes: number) => {
     return `${minutes}分`
   }
