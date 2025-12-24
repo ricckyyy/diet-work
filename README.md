@@ -17,7 +17,9 @@
 
 - **フロントエンド**: Next.js 16 (App Router) + TypeScript
 - **スタイリング**: Tailwind CSS
-- **データベース**: SQLite (Prisma ORM)
+- **データベース**: SQLite (開発環境) / PostgreSQL (本番環境推奨)
+- **ORM**: Prisma
+- **デプロイ**: Vercel対応済み
 - **認証**: なし (MVP では単一ユーザー前提)
 
 ## 機能
@@ -230,6 +232,103 @@ mainブランチに変更がプッシュされると、自動的にバージョ�
 
 **継続的デプロイ**:
 デプロイ設定をマージ後、mainブランチへのプッシュで自動的にデプロイされます。
+
+## Vercelへのデプロイ
+
+このアプリケーションは Vercel にデプロイできるように設定されています。
+
+### 前提条件
+
+- [Vercel](https://vercel.com) アカウント
+- GitHubとVercelの連携
+
+### デプロイ手順
+
+#### 1. Vercelプロジェクトの作成
+
+1. [Vercel Dashboard](https://vercel.com/dashboard) にアクセス
+2. 「Add New...」→「Project」をクリック
+3. このGitHubリポジトリを選択
+4. 「Import」をクリック
+
+#### 2. 環境変数の設定
+
+**開発環境（SQLite使用）の場合：**
+
+プロジェクト設定で以下の環境変数を設定：
+
+```
+DATABASE_URL=file:./dev.db
+```
+
+**本番環境（PostgreSQL推奨）の場合：**
+
+Vercel PostgresまたはSupabaseなどのPostgreSQLデータベースを使用することを推奨します。
+
+```
+DATABASE_URL=postgresql://user:password@host:port/database?schema=public
+```
+
+#### 3. ビルド設定の確認
+
+`vercel.json` で以下の設定が適用されます：
+
+- **Build Command**: `prisma generate && next build`
+- **Install Command**: `npm install`
+- **Framework**: Next.js
+
+これらの設定により、デプロイ時に自動的にPrisma Clientが生成されます。
+
+#### 4. デプロイの実行
+
+設定が完了したら「Deploy」をクリックします。数分でデプロイが完了し、アプリケーションのURLが発行されます。
+
+### データベースの選択肢
+
+#### オプション1: Vercel Postgres（推奨）
+
+1. Vercel Dashboardでプロジェクトを開く
+2. 「Storage」タブをクリック
+3. 「Create Database」→「Postgres」を選択
+4. データベースが作成され、自動的に `DATABASE_URL` が設定される
+5. Prismaスキーマの `provider` を `postgresql` に変更する必要があります
+
+#### オプション2: Supabase
+
+1. [Supabase](https://supabase.com) でプロジェクトを作成
+2. Database の Connection String を取得
+3. Vercelの環境変数に `DATABASE_URL` を設定
+4. Prismaスキーマの `provider` を `postgresql` に変更する必要があります
+
+#### オプション3: SQLite（制限あり）
+
+Vercelは読み取り専用ファイルシステムのため、SQLiteは開発環境のみでの使用を推奨します。本番環境では PostgreSQL を使用してください。
+
+### マイグレーションの実行
+
+PostgreSQLを使用する場合、初回デプロイ後にマイグレーションを実行する必要があります：
+
+```bash
+# Prismaスキーマのproviderを変更
+# prisma/schema.prisma の datasource db を以下に変更：
+# provider = "postgresql"
+
+# マイグレーションを作成
+npx prisma migrate dev --name init
+
+# 本番環境でマイグレーションを実行（Vercel CLIを使用）
+vercel env pull .env.production
+npx prisma migrate deploy
+```
+
+### 継続的デプロイ
+
+GitHubの `main` ブランチにプッシュすると、自動的にVercelにデプロイされます。
+プルリクエストを作成すると、プレビューデプロイも自動的に作成されます。
+
+### デプロイの確認
+
+デプロイが成功したら、Vercelが発行したURLにアクセスしてアプリケーションの動作を確認してください。
 
 ## トラブルシューティング
 
