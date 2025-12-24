@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import WeightAndSideJobChart from './components/WeightAndSideJobChart'
 
 interface WeightData {
   id: number
@@ -257,7 +258,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-md mx-auto space-y-4">
+      <div className="max-w-6xl mx-auto space-y-4">
+        {/* 推移グラフ - 一番上に配置 */}
+        <WeightAndSideJobChart />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* 第1カラム: 体重記録 */}
+          <div className="space-y-4">
         {/* 体重記録カード */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
@@ -318,7 +325,10 @@ export default function Home() {
             </div>
           )}
         </div>
+          </div>
 
+          {/* 第2カラム: 副業記録 */}
+          <div className="space-y-4">
         {/* 副業記録カード */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
@@ -414,7 +424,10 @@ export default function Home() {
             </div>
           )}
         </div>
+          </div>
 
+          {/* 第3カラム: 副業タイム警告と副業実績 */}
+          <div className="space-y-4">
         {/* 副業タイム警告 */}
         {showSideJob && (
           <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-md p-6">
@@ -464,6 +477,8 @@ export default function Home() {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   )
