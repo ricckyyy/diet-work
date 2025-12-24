@@ -1,0 +1,482 @@
+name: デプロイ環境選択
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'デプロイ先を選択してください'
+        required: true
+        type: choice
+        options:
+          - 'vercel'
+          - 'netlify'
+          - 'cloudflare-pages'
+          - 'railway'
+          - 'render'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  create-deployment-pr:
+    runs-on: ubuntu-latest
+    name: デプロイ設定PRを作成
+    
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Gitユーザー設定
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: デプロイ設定ブランチを作成
+        run: |
+          BRANCH_NAME="deploy/${{ github.event.inputs.deploy_target }}-$(date +%s)"
+          git checkout -b $BRANCH_NAME
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      
+      - name: Vercel設定を追加
+        if: github.event.inputs.deploy_target == 'vercel'
+        run: |
+          cat > vercel.json << 'EOF'
+          {
+            "buildCommand": "npm run build",
+            "devCommand": "npm run dev",
+            "installCommand": "npm install",
+            "framework": "nextjs",
+            "outputDirectory": ".next"
+          }
+          EOF
+          
+          cat > .vercelignore << 'EOF'
+          node_modules
+          .next
+          .env*
+          prisma/dev.db
+          EOF
+          
+          git add vercel.json .vercelignore
+      
+      - name: Netlify設定を追加
+        if: github.event.inputs.deploy_target == 'netlify'
+        run: |
+          cat > netlify.toml << 'EOF'
+          [build]
+            command = "npm run build"
+          
+          [build.environment]
+            NODE_VERSION = "20"
+          
+          [[plugins]]
+            package = "@netlify/plugin-nextjs"
+          EOF
+          
+          git add netlify.toml
+      
+      - name: Cloudflare Pages設定を追加
+        if: github.event.inputs.deploy_target == 'cloudflare-pages'
+        run: |
+          APP_NAME="${GITHUB_REPOSITORY#*/}"
+          COMPAT_DATE=$(date +%Y-%m-%d)
+          cat > wrangler.toml << EOF
+          name = "$APP_NAME"
+          compatibility_date = "$COMPAT_DATE"
+          
+          [build]
+            command = "npm run build"
+          EOF
+          
+          # Next.jsのCloudflare Pages対応についてのメモを追加
+          cat > CLOUDFLARE_DEPLOY_NOTE.md << 'EOF'
+          # Cloudflare Pagesデプロイに関する注意事項
+          
+          Cloudflare Pagesは、Next.jsのフルスタック機能をサポートしていますが、
+          設定には以下の点に注意してください：
+          
+          1. ビルドコマンド: `npm run build`
+          2. 出力ディレクトリ: 自動検出されます（`.next`）
+          3. Node.jsバージョン: 20を選択
+          
+          ## 環境変数の設定
+          Cloudflareダッシュボードで以下を設定してください：
+          - `DATABASE_URL`: データベース接続文字列
+          
+          ## 参考情報
+          - https://developers.cloudflare.com/pages/framework-guides/nextjs/
+          EOF
+          
+          git add wrangler.toml CLOUDFLARE_DEPLOY_NOTE.md
+      
+      - name: Railway設定を追加
+        if: github.event.inputs.deploy_target == 'railway'
+        run: |
+          cat > railway.json << 'EOF'
+          {
+            "$schema": "https://railway.app/railway.schema.json",
+            "build": {
+              "builder": "NIXPACKS",
+              "buildCommand": "npm run build"
+            },
+            "deploy": {
+              "startCommand": "npm run start",
+              "restartPolicyType": "ON_FAILURE",
+              "restartPolicyMaxRetries": 10
+            }
+          }
+          EOF
+          
+          cat > nixpacks.toml << 'EOF'
+          [phases.setup]
+            nixPkgs = ["nodejs-20_x", "npm-10_x"]
+          
+          [phases.install]
+            cmds = ["npm ci"]
+          
+          [phases.build]
+            cmds = ["npm run build", "npx prisma generate"]
+          
+          [start]
+            cmd = "npm run start"
+          EOF
+          
+          git add railway.json nixpacks.toml
+      
+      - name: Render設定を追加
+        if: github.event.inputs.deploy_target == 'render'
+        run: |
+          APP_NAME="${GITHUB_REPOSITORY#*/}"
+          
+          # Prismaを使用しているか確認
+          if [ -f "prisma/schema.prisma" ]; then
+            BUILD_CMD="npm install && npm run build && npx prisma generate"
+          else
+            BUILD_CMD="npm install && npm run build"
+          fi
+          
+          cat > render.yaml << EOF
+          services:
+            - type: web
+              name: $APP_NAME
+              env: node
+              plan: free
+              buildCommand: $BUILD_CMD
+              startCommand: npm run start
+              envVars:
+                - key: NODE_VERSION
+                  value: 20
+                - key: DATABASE_URL
+                  sync: false
+          EOF
+          
+          git add render.yaml
+      
+      - name: README更新
+        run: |
+          TARGET="${{ github.event.inputs.deploy_target }}"
+          
+          # READMEに追加するデプロイセクションを作成
+          cat > deploy_section.md << 'DEPLOY_EOF'
+          
+          ---
+          
+          DEPLOY_EOF
+          
+          case $TARGET in
+            vercel)
+              cat >> deploy_section.md << 'VERCEL_EOF'
+          ## Vercelへのデプロイ
+          
+          ### 準備
+          1. [Vercel](https://vercel.com)でアカウントを作成
+          2. GitHubリポジトリと連携
+          
+          ### デプロイ手順
+          1. Vercelダッシュボードで「New Project」をクリック
+          2. このリポジトリを選択
+          3. 環境変数を設定:
+             - `DATABASE_URL`: PostgreSQL接続文字列（Vercel Postgresを使用可能）
+          4. 「Deploy」をクリック
+          
+          ### 自動デプロイ
+          - mainブランチへのプッシュで自動デプロイされます
+          - プレビュー環境もプルリクエストごとに自動作成されます
+          VERCEL_EOF
+              ;;
+            netlify)
+              cat >> deploy_section.md << 'NETLIFY_EOF'
+          ## Netlifyへのデプロイ
+          
+          ### 準備
+          1. [Netlify](https://netlify.com)でアカウントを作成
+          2. GitHubリポジトリと連携
+          
+          ### デプロイ手順
+          1. Netlifyダッシュボードで「Add new site」をクリック
+          2. 「Import an existing project」を選択
+          3. このリポジトリを選択
+          4. ビルド設定:
+             - Build command: `npm run build`
+             - Publish directory: `.next`
+          5. 環境変数を設定:
+             - `DATABASE_URL`: PostgreSQL接続文字列
+          6. 「Deploy site」をクリック
+          
+          ### 自動デプロイ
+          - mainブランチへのプッシュで自動デプロイされます
+          NETLIFY_EOF
+              ;;
+            cloudflare-pages)
+              cat >> deploy_section.md << 'CLOUDFLARE_EOF'
+          ## Cloudflare Pagesへのデプロイ
+          
+          ### 準備
+          1. [Cloudflare](https://cloudflare.com)でアカウントを作成
+          2. Pages機能を有効化
+          
+          ### デプロイ手順
+          1. Cloudflareダッシュボードで「Pages」を選択
+          2. 「Create a project」をクリック
+          3. このGitHubリポジトリを接続
+          4. ビルド設定:
+             - Build command: `npm run build`
+             - Build output directory: `.next`
+          5. 環境変数を設定:
+             - `DATABASE_URL`: D1データベースまたは外部PostgreSQL
+          6. 「Save and Deploy」をクリック
+          
+          ### 自動デプロイ
+          - mainブランチへのプッシュで自動デプロイされます
+          CLOUDFLARE_EOF
+              ;;
+            railway)
+              cat >> deploy_section.md << 'RAILWAY_EOF'
+          ## Railwayへのデプロイ
+          
+          ### 準備
+          1. [Railway](https://railway.app)でアカウントを作成
+          2. GitHubリポジトリと連携
+          
+          ### デプロイ手順
+          1. Railwayダッシュボードで「New Project」をクリック
+          2. 「Deploy from GitHub repo」を選択
+          3. このリポジトリを選択
+          4. PostgreSQLサービスを追加:
+             - 「New」→「Database」→「PostgreSQL」
+          5. 環境変数を自動設定（DATABASE_URLが自動で設定されます）
+          6. デプロイが自動開始されます
+          
+          ### データベースマイグレーション
+          初回デプロイ後、Railwayのコンソールで:
+          ```bash
+          npx prisma migrate deploy
+          ```
+          
+          ### 自動デプロイ
+          - mainブランチへのプッシュで自動デプロイされます
+          RAILWAY_EOF
+              ;;
+            render)
+              cat >> deploy_section.md << 'RENDER_EOF'
+          ## Renderへのデプロイ
+          
+          ### 準備
+          1. [Render](https://render.com)でアカウントを作成
+          2. GitHubリポジトリと連携
+          
+          ### デプロイ手順
+          1. Renderダッシュボードで「New」→「Web Service」をクリック
+          2. このGitHubリポジトリを選択
+          3. 設定を確認:
+             - Build Command: `npm install && npm run build && npx prisma generate`
+             - Start Command: `npm run start`
+          4. PostgreSQLデータベースを作成:
+             - 「New」→「PostgreSQL」
+          5. 環境変数を設定:
+             - `DATABASE_URL`: 作成したPostgreSQLの内部URL
+          6. 「Create Web Service」をクリック
+          
+          ### データベースマイグレーション
+          初回デプロイ後、Renderのシェルで:
+          ```bash
+          npx prisma migrate deploy
+          ```
+          
+          ### 自動デプロイ
+          - mainブランチへのプッシュで自動デプロイされます
+          RENDER_EOF
+              ;;
+          esac
+          
+          # README.mdの最後にデプロイセクションを追加
+          if ! grep -q "へのデプロイ" README.md; then
+            cat deploy_section.md >> README.md
+          fi
+          
+          git add README.md
+      
+      - name: 変更をコミット
+        run: |
+          git commit -m "feat: ${{ github.event.inputs.deploy_target }}へのデプロイ設定を追加"
+      
+      - name: ブランチをプッシュ
+        run: |
+          git push origin ${{ env.BRANCH_NAME }}
+      
+      - name: プルリクエストを作成
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET="${{ github.event.inputs.deploy_target }}"
+          
+          # PRの説明文を作成
+          case $TARGET in
+            vercel)
+              cat > pr_description.md << 'PR_EOF'
+          ## 🚀 Vercelデプロイ設定
+          
+          この設定により、Next.jsアプリケーションをVercelにデプロイできます。
+          
+          ### 特徴
+          - ✅ Next.jsの公式推奨プラットフォーム
+          - ✅ 最も簡単なセットアップ
+          - ✅ 自動プレビュー環境
+          - ✅ Vercel Postgres統合
+          
+          ### 無料プランの制限
+          - 月100GBの帯域幅
+          - 6,000ビルド分/月
+          - Serverless Functions: 100GB-Hours
+          
+          ### 次のステップ
+          1. このPRをマージ
+          2. Vercelアカウントを作成
+          3. GitHubリポジトリを接続
+          4. 環境変数を設定してデプロイ
+          PR_EOF
+              ;;
+            netlify)
+              cat > pr_description.md << 'PR_EOF'
+          ## 🚀 Netlifyデプロイ設定
+          
+          この設定により、Next.jsアプリケーションをNetlifyにデプロイできます。
+          
+          ### 特徴
+          - ✅ 簡単なセットアップ
+          - ✅ プレビューデプロイ
+          - ✅ フォーム処理機能
+          - ✅ Netlify Identity認証
+          
+          ### 無料プランの制限
+          - 月100GBの帯域幅
+          - 300ビルド分/月
+          - サーバーレス関数: 125K実行/月
+          
+          ### 次のステップ
+          1. このPRをマージ
+          2. Netlifyアカウントを作成
+          3. GitHubリポジトリを接続
+          4. `@netlify/plugin-nextjs`プラグインを有効化
+          PR_EOF
+              ;;
+            cloudflare-pages)
+              cat > pr_description.md << 'PR_EOF'
+          ## 🚀 Cloudflare Pagesデプロイ設定
+          
+          この設定により、Next.jsアプリケーションをCloudflare Pagesにデプロイできます。
+          
+          ### 特徴
+          - ✅ 高速CDN配信
+          - ✅ 無制限の帯域幅（無料）
+          - ✅ D1データベース統合
+          - ✅ Workers統合
+          
+          ### 無料プランの制限
+          - 500ビルド/月
+          - 無制限の帯域幅とリクエスト
+          - D1: 100Kリード/日、50Kライト/日
+          
+          ### 次のステップ
+          1. このPRをマージ
+          2. Cloudflareアカウントを作成
+          3. GitHubリポジトリを接続
+          4. D1データベースをセットアップ（またはPostgreSQL）
+          PR_EOF
+              ;;
+            railway)
+              cat > pr_description.md << 'PR_EOF'
+          ## 🚀 Railwayデプロイ設定
+          
+          この設定により、Next.jsアプリケーションをRailwayにデプロイできます。
+          
+          ### 特徴
+          - ✅ PostgreSQL統合が簡単
+          - ✅ 環境変数の自動設定
+          - ✅ Git統合デプロイ
+          - ✅ スケーリングが容易
+          
+          ### 無料プランの制限
+          - $5相当のクレジット/月
+          - リソース使用量に応じて消費
+          - 小規模アプリなら十分
+          
+          ### 次のステップ
+          1. このPRをマージ
+          2. Railwayアカウントを作成
+          3. GitHubリポジトリを接続
+          4. PostgreSQLサービスを追加
+          5. データベースマイグレーションを実行
+          PR_EOF
+              ;;
+            render)
+              cat > pr_description.md << 'PR_EOF'
+          ## 🚀 Renderデプロイ設定
+          
+          この設定により、Next.jsアプリケーションをRenderにデプロイできます。
+          
+          ### 特徴
+          - ✅ PostgreSQL統合
+          - ✅ 自動SSL証明書
+          - ✅ プレビュー環境
+          - ✅ シンプルな設定
+          
+          ### 無料プランの制限
+          - 750時間/月の無料稼働時間
+          - 非アクティブ時は自動スリープ
+          - PostgreSQL: 90日間無料（その後有料）
+          
+          ### 次のステップ
+          1. このPRをマージ
+          2. Renderアカウントを作成
+          3. GitHubリポジトリを接続
+          4. PostgreSQLデータベースを作成
+          5. データベースマイグレーションを実行
+          PR_EOF
+              ;;
+          esac
+          
+          # PRを作成
+          gh pr create \
+            --title "feat: ${{ github.event.inputs.deploy_target }}へのデプロイ設定" \
+            --body-file pr_description.md \
+            --base main \
+            --head ${{ env.BRANCH_NAME }}
+
+  deploy-info:
+    runs-on: ubuntu-latest
+    name: デプロイ環境情報を表示
+    
+    steps:
+      - name: 選択されたデプロイ先を表示
+        run: |
+          echo "## ✅ デプロイ設定の準備完了"
+          echo ""
+          echo "選択されたデプロイ先: **${{ github.event.inputs.deploy_target }}**"
+          echo ""
+          echo "プルリクエストが作成されました。"
+          echo "PRを確認して、問題なければマージしてください。"

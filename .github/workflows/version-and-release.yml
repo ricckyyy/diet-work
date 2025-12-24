@@ -1,0 +1,100 @@
+name: バージョンアップとリリース
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  version-and-release:
+    runs-on: ubuntu-latest
+    name: バージョン自動更新とリリース作成
+    # バージョン更新コミットによる無限ループを防ぐ
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Gitユーザー設定
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: 現在のバージョンを取得
+        id: get_version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "現在のバージョン: $CURRENT_VERSION"
+      
+      - name: 前回のタグを取得（バージョンアップ前）
+        id: get_previous_tag
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "前回のタグ: なし（最初のリリース）"
+          else
+            echo "前回のタグ: $PREVIOUS_TAG"
+          fi
+      
+      - name: バージョンをインクリメント
+        id: bump_version
+        run: |
+          npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "新しいバージョン: $NEW_VERSION"
+      
+      - name: 変更をプッシュ
+        run: |
+          git push origin main --follow-tags
+      
+      - name: リリースノートを生成
+        id: release_notes
+        run: |
+          PREVIOUS_TAG="${{ steps.get_previous_tag.outputs.previous_tag }}"
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "最初のリリースです"
+            NOTES="## 🎉 最初のリリース\n\n"
+            NOTES+="### 変更内容\n"
+            NOTES+="$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)"
+          else
+            echo "前回のタグ: $PREVIOUS_TAG"
+            NOTES="## 📝 変更内容\n\n"
+            NOTES+="### コミット履歴\n"
+            NOTES+="$(git log $PREVIOUS_TAG..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを')"
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: GitHubリリースを作成
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.bump_version.outputs.new_version }}
+          name: Release v${{ steps.bump_version.outputs.new_version }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          draft: false
+          prerelease: false
+      
+      - name: デプロイワークフローをトリガー
+        run: |
+          echo "✅ バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }}"
+          echo "✅ リリース v${{ steps.bump_version.outputs.new_version }} を作成しました"
+          echo "次のステップ: デプロイ環境を選択してください"

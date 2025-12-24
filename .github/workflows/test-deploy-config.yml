@@ -1,0 +1,359 @@
+name: 🧪 デプロイ設定生成のテスト
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'テストするデプロイ先を選択'
+        required: true
+        type: choice
+        options:
+          - 'vercel'
+          - 'netlify'
+          - 'cloudflare-pages'
+          - 'railway'
+          - 'render'
+      create_files:
+        description: '実際に設定ファイルを作成する（テストブランチに）'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  test-deploy-config:
+    runs-on: ubuntu-latest
+    name: デプロイ設定生成のテスト
+    
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Gitユーザー設定
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: テスト用一時ディレクトリを作成
+        run: |
+          mkdir -p /tmp/deploy-test
+          echo "📁 テスト用ディレクトリを作成しました"
+      
+      - name: Vercel設定をプレビュー
+        if: github.event.inputs.deploy_target == 'vercel'
+        run: |
+          echo "## 🚀 Vercel デプロイ設定プレビュー"
+          echo ""
+          echo "### vercel.json"
+          echo '```json'
+          cat << 'EOF'
+          {
+            "buildCommand": "npm run build",
+            "devCommand": "npm run dev",
+            "installCommand": "npm install",
+            "framework": "nextjs",
+            "outputDirectory": ".next"
+          }
+          EOF
+          echo '```'
+          echo ""
+          echo "### .vercelignore"
+          echo '```'
+          cat << 'EOF'
+          node_modules
+          .next
+          .env*
+          prisma/dev.db
+          EOF
+          echo '```'
+          
+          if [ "${{ github.event.inputs.create_files }}" = "true" ]; then
+            cat > vercel.json << 'VERCEL_EOF'
+          {
+            "buildCommand": "npm run build",
+            "devCommand": "npm run dev",
+            "installCommand": "npm install",
+            "framework": "nextjs",
+            "outputDirectory": ".next"
+          }
+          VERCEL_EOF
+            
+            cat > .vercelignore << 'VERCEL_EOF'
+          node_modules
+          .next
+          .env*
+          prisma/dev.db
+          VERCEL_EOF
+            echo "✅ ファイルを作成しました"
+          fi
+      
+      - name: Netlify設定をプレビュー
+        if: github.event.inputs.deploy_target == 'netlify'
+        run: |
+          echo "## 🚀 Netlify デプロイ設定プレビュー"
+          echo ""
+          echo "### netlify.toml"
+          echo '```toml'
+          cat << 'EOF'
+          [build]
+            command = "npm run build"
+          
+          [build.environment]
+            NODE_VERSION = "20"
+          
+          [[plugins]]
+            package = "@netlify/plugin-nextjs"
+          EOF
+          echo '```'
+          
+          if [ "${{ github.event.inputs.create_files }}" = "true" ]; then
+            cat > netlify.toml << 'NETLIFY_EOF'
+          [build]
+            command = "npm run build"
+          
+          [build.environment]
+            NODE_VERSION = "20"
+          
+          [[plugins]]
+            package = "@netlify/plugin-nextjs"
+          NETLIFY_EOF
+            echo "✅ ファイルを作成しました"
+          fi
+      
+      - name: Cloudflare Pages設定をプレビュー
+        if: github.event.inputs.deploy_target == 'cloudflare-pages'
+        run: |
+          APP_NAME="${GITHUB_REPOSITORY#*/}"
+          COMPAT_DATE=$(date +%Y-%m-%d)
+          
+          echo "## 🚀 Cloudflare Pages デプロイ設定プレビュー"
+          echo ""
+          echo "### wrangler.toml"
+          echo '```toml'
+          cat << EOF
+          name = "$APP_NAME"
+          compatibility_date = "$COMPAT_DATE"
+          
+          [build]
+            command = "npm run build"
+          EOF
+          echo '```'
+          
+          echo ""
+          echo "### CLOUDFLARE_DEPLOY_NOTE.md"
+          echo '```markdown'
+          cat << 'EOF'
+          # Cloudflare Pagesデプロイに関する注意事項
+          
+          Cloudflare Pagesは、Next.jsのフルスタック機能をサポートしていますが、
+          設定には以下の点に注意してください：
+          
+          1. ビルドコマンド: `npm run build`
+          2. 出力ディレクトリ: 自動検出されます（`.next`）
+          3. Node.jsバージョン: 20を選択
+          
+          ## 環境変数の設定
+          Cloudflareダッシュボードで以下を設定してください：
+          - `DATABASE_URL`: データベース接続文字列
+          
+          ## 参考情報
+          - https://developers.cloudflare.com/pages/framework-guides/nextjs/
+          EOF
+          echo '```'
+          
+          if [ "${{ github.event.inputs.create_files }}" = "true" ]; then
+            cat > wrangler.toml << EOF
+          name = "$APP_NAME"
+          compatibility_date = "$COMPAT_DATE"
+          
+          [build]
+            command = "npm run build"
+          EOF
+            
+            cat > CLOUDFLARE_DEPLOY_NOTE.md << 'CF_EOF'
+          # Cloudflare Pagesデプロイに関する注意事項
+          
+          Cloudflare Pagesは、Next.jsのフルスタック機能をサポートしていますが、
+          設定には以下の点に注意してください：
+          
+          1. ビルドコマンド: `npm run build`
+          2. 出力ディレクトリ: 自動検出されます（`.next`）
+          3. Node.jsバージョン: 20を選択
+          
+          ## 環境変数の設定
+          Cloudflareダッシュボードで以下を設定してください：
+          - `DATABASE_URL`: データベース接続文字列
+          
+          ## 参考情報
+          - https://developers.cloudflare.com/pages/framework-guides/nextjs/
+          CF_EOF
+            echo "✅ ファイルを作成しました"
+          fi
+      
+      - name: Railway設定をプレビュー
+        if: github.event.inputs.deploy_target == 'railway'
+        run: |
+          echo "## 🚀 Railway デプロイ設定プレビュー"
+          echo ""
+          echo "### railway.json"
+          echo '```json'
+          cat << 'EOF'
+          {
+            "$schema": "https://railway.app/railway.schema.json",
+            "build": {
+              "builder": "NIXPACKS",
+              "buildCommand": "npm run build"
+            },
+            "deploy": {
+              "startCommand": "npm run start",
+              "restartPolicyType": "ON_FAILURE",
+              "restartPolicyMaxRetries": 10
+            }
+          }
+          EOF
+          echo '```'
+          echo ""
+          echo "### nixpacks.toml"
+          echo '```toml'
+          cat << 'EOF'
+          [phases.setup]
+            nixPkgs = ["nodejs-20_x", "npm-10_x"]
+          
+          [phases.install]
+            cmds = ["npm ci"]
+          
+          [phases.build]
+            cmds = ["npm run build", "npx prisma generate"]
+          
+          [start]
+            cmd = "npm run start"
+          EOF
+          echo '```'
+          
+          if [ "${{ github.event.inputs.create_files }}" = "true" ]; then
+            cat > railway.json << 'RAILWAY_EOF'
+          {
+            "$schema": "https://railway.app/railway.schema.json",
+            "build": {
+              "builder": "NIXPACKS",
+              "buildCommand": "npm run build"
+            },
+            "deploy": {
+              "startCommand": "npm run start",
+              "restartPolicyType": "ON_FAILURE",
+              "restartPolicyMaxRetries": 10
+            }
+          }
+          RAILWAY_EOF
+            
+            cat > nixpacks.toml << 'RAILWAY_EOF'
+          [phases.setup]
+            nixPkgs = ["nodejs-20_x", "npm-10_x"]
+          
+          [phases.install]
+            cmds = ["npm ci"]
+          
+          [phases.build]
+            cmds = ["npm run build", "npx prisma generate"]
+          
+          [start]
+            cmd = "npm run start"
+          RAILWAY_EOF
+            echo "✅ ファイルを作成しました"
+          fi
+      
+      - name: Render設定をプレビュー
+        if: github.event.inputs.deploy_target == 'render'
+        run: |
+          APP_NAME="${GITHUB_REPOSITORY#*/}"
+          
+          # Prismaを使用しているか確認
+          if [ -f "prisma/schema.prisma" ]; then
+            BUILD_CMD="npm install && npm run build && npx prisma generate"
+            PRISMA_STATUS="✅ Prismaが検出されました"
+          else
+            BUILD_CMD="npm install && npm run build"
+            PRISMA_STATUS="ℹ️ Prismaは検出されませんでした"
+          fi
+          
+          echo "## 🚀 Render デプロイ設定プレビュー"
+          echo ""
+          echo "$PRISMA_STATUS"
+          echo ""
+          echo "### render.yaml"
+          echo '```yaml'
+          cat << EOF
+          services:
+            - type: web
+              name: $APP_NAME
+              env: node
+              plan: free
+              buildCommand: $BUILD_CMD
+              startCommand: npm run start
+              envVars:
+                - key: NODE_VERSION
+                  value: 20
+                - key: DATABASE_URL
+                  sync: false
+          EOF
+          echo '```'
+          
+          if [ "${{ github.event.inputs.create_files }}" = "true" ]; then
+            cat > render.yaml << EOF
+          services:
+            - type: web
+              name: $APP_NAME
+              env: node
+              plan: free
+              buildCommand: $BUILD_CMD
+              startCommand: npm run start
+              envVars:
+                - key: NODE_VERSION
+                  value: 20
+                - key: DATABASE_URL
+                  sync: false
+          EOF
+            echo "✅ ファイルを作成しました"
+          fi
+      
+      - name: テスト結果のサマリー
+        run: |
+          echo "## 🎯 テスト結果"
+          echo ""
+          echo "✅ 選択されたデプロイ先: **${{ github.event.inputs.deploy_target }}**"
+          echo "✅ 設定ファイルのプレビュー: 成功"
+          echo ""
+          if [ "${{ github.event.inputs.create_files }}" = "true" ]; then
+            echo "✅ 設定ファイルの作成: 完了"
+            echo ""
+            echo "作成されたファイル:"
+            git status --short
+          else
+            echo "ℹ️ 設定ファイルの作成: スキップ（プレビューのみ）"
+          fi
+          echo ""
+          echo "### 📋 実際のワークフローで実行される処理"
+          echo "1. デプロイ設定ファイルを作成"
+          echo "2. README.mdにデプロイ手順を追加"
+          echo "3. 新しいブランチにコミット"
+          echo "4. ブランチをプッシュ"
+          echo "5. プルリクエストを自動作成"
+      
+      - name: 作成されたファイルの確認
+        if: github.event.inputs.create_files == 'true'
+        run: |
+          echo "## 📄 作成されたファイルの内容"
+          echo ""
+          for file in vercel.json .vercelignore netlify.toml wrangler.toml CLOUDFLARE_DEPLOY_NOTE.md railway.json nixpacks.toml render.yaml; do
+            if [ -f "$file" ]; then
+              echo "### $file"
+              echo '```'
+              cat "$file"
+              echo '```'
+              echo ""
+            fi
+          done
