@@ -10,6 +10,8 @@ jobs:
   check-up-to-date:
     runs-on: ubuntu-latest
     name: mainブランチが最新か確認
+    permissions:
+      contents: read
 
     steps:
       - name: リポジトリのチェックアウト
