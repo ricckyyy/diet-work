@@ -69,7 +69,6 @@ jobs:
           cat > netlify.toml << 'EOF'
           [build]
             command = "npm run build"
-            publish = ".next"
           
           [build.environment]
             NODE_VERSION = "20"
@@ -87,16 +86,31 @@ jobs:
           cat > wrangler.toml << EOF
           name = "$APP_NAME"
           compatibility_date = "2024-12-24"
-          pages_build_output_dir = ".next"
           
           [build]
             command = "npm run build"
-          
-          [build.environment]
-            NODE_VERSION = "20"
           EOF
           
-          git add wrangler.toml
+          # Next.jsのCloudflare Pages対応についてのメモを追加
+          cat > CLOUDFLARE_DEPLOY_NOTE.md << 'EOF'
+          # Cloudflare Pagesデプロイに関する注意事項
+          
+          Cloudflare Pagesは、Next.jsのフルスタック機能をサポートしていますが、
+          設定には以下の点に注意してください：
+          
+          1. ビルドコマンド: `npm run build`
+          2. 出力ディレクトリ: 自動検出されます（`.next`）
+          3. Node.jsバージョン: 20を選択
+          
+          ## 環境変数の設定
+          Cloudflareダッシュボードで以下を設定してください：
+          - `DATABASE_URL`: データベース接続文字列
+          
+          ## 参考情報
+          - https://developers.cloudflare.com/pages/framework-guides/nextjs/
+          EOF
+          
+          git add wrangler.toml CLOUDFLARE_DEPLOY_NOTE.md
       
       - name: Railway設定を追加
         if: github.event.inputs.deploy_target == 'railway'

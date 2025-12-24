@@ -54,7 +54,9 @@ jobs:
       - name: リリースノートを生成
         id: release_notes
         run: |
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          # 前回のタグを安全に取得
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
+          
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "最初のリリースです"
             NOTES="## 🎉 最初のリリース\n\n"
