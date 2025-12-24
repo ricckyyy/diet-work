@@ -259,6 +259,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-4">
+        {/* 推移グラフ - 一番上に配置 */}
+        <WeightAndSideJobChart />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* 左カラム: 体重記録と副業記録 */}
           <div className="space-y-4">
@@ -418,7 +421,10 @@ export default function Home() {
             </div>
           )}
         </div>
+          </div>
 
+          {/* 右カラム: 副業タイム警告と副業実績 */}
+          <div className="space-y-4">
         {/* 副業タイム警告 */}
         {showSideJob && (
           <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-md p-6">
@@ -468,11 +474,6 @@ export default function Home() {
             </div>
           </div>
         )}
-          </div>
-
-          {/* 右カラム: グラフ */}
-          <div className="lg:col-span-1">
-            <WeightAndSideJobChart />
           </div>
         </div>
       </div>
