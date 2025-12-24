@@ -15,7 +15,7 @@ on:
           - 'render'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
 
@@ -83,8 +83,9 @@ jobs:
       - name: Cloudflare Pages設定を追加
         if: github.event.inputs.deploy_target == 'cloudflare-pages'
         run: |
-          cat > wrangler.toml << 'EOF'
-          name = "diet-work"
+          APP_NAME="${GITHUB_REPOSITORY#*/}"
+          cat > wrangler.toml << EOF
+          name = "$APP_NAME"
           compatibility_date = "2025-12-24"
           pages_build_output_dir = ".next"
           
@@ -134,10 +135,11 @@ jobs:
       - name: Render設定を追加
         if: github.event.inputs.deploy_target == 'render'
         run: |
-          cat > render.yaml << 'EOF'
+          APP_NAME="${GITHUB_REPOSITORY#*/}"
+          cat > render.yaml << EOF
           services:
             - type: web
-              name: diet-work
+              name: $APP_NAME
               env: node
               plan: free
               buildCommand: npm install && npm run build && npx prisma generate
@@ -289,7 +291,7 @@ jobs:
           esac
           
           # README.mdの最後にデプロイセクションを追加
-          if ! grep -q "## デプロイ設定" README.md && ! grep -q "へのデプロイ" README.md; then
+          if ! grep -q "へのデプロイ" README.md; then
             cat deploy_section.md >> README.md
           fi
           
