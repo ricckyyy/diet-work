@@ -24,19 +24,31 @@ export async function POST(request: NextRequest) {
 		const normalizedDate = new Date(date);
 		normalizedDate.setHours(0, 0, 0, 0);
 
-		// upsert: 存在すれば更新、なければ作成
-		const sideJobLog = await prisma.sideJobLog.upsert({
+		// 既存のレコードを確認
+		const existingLog = await prisma.sideJobLog.findUnique({
 			where: { date: normalizedDate },
-			update: {
-				minutes: minutesValue,
-				memo: memo || null,
-			},
-			create: {
-				date: normalizedDate,
-				minutes: minutesValue,
-				memo: memo || null,
-			},
 		});
+
+		let sideJobLog;
+		if (existingLog) {
+			// 存在する場合は、既存の分数に新しい分数を加算（アトミック操作）
+			sideJobLog = await prisma.sideJobLog.update({
+				where: { date: normalizedDate },
+				data: {
+					minutes: { increment: minutesValue },
+					...(memo && { memo }), // メモが提供された場合のみ更新
+				},
+			});
+		} else {
+			// 存在しない場合は新規作成
+			sideJobLog = await prisma.sideJobLog.create({
+				data: {
+					date: normalizedDate,
+					minutes: minutesValue,
+					memo: memo || null,
+				},
+			});
+		}
 
 		return NextResponse.json(sideJobLog);
 	} catch (error) {
