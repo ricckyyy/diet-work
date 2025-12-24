@@ -1,0 +1,46 @@
+name: mainブランチの取り込みチェック
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-up-to-date:
+    runs-on: ubuntu-latest
+    name: mainブランチが最新か確認
+    permissions:
+      contents: read
+
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: mainブランチの最新情報を取得
+        run: |
+          git fetch origin main
+
+      - name: PRブランチがmainを取り込んでいるか確認
+        run: |
+          # mainブランチの最新コミットを取得
+          MAIN_COMMIT=$(git rev-parse origin/main)
+          echo "mainブランチの最新コミット: $MAIN_COMMIT"
+
+          # 現在のブランチがmainの最新コミットを含んでいるか確認
+          if git merge-base --is-ancestor $MAIN_COMMIT HEAD; then
+            echo "✅ このブランチはmainブランチの最新変更を取り込んでいます"
+            exit 0
+          else
+            echo "❌ このブランチはmainブランチの最新変更を取り込んでいません"
+            echo ""
+            echo "以下のコマンドを実行して、mainブランチの変更を取り込んでください:"
+            echo "  git fetch origin main"
+            echo "  git merge origin/main"
+            echo "または:"
+            echo "  git fetch origin main"
+            echo "  git rebase origin/main"
+            exit 1
+          fi
