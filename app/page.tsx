@@ -28,6 +28,11 @@ export default function Home() {
   const [sideJobLoading, setSideJobLoading] = useState(false)
   const [sideJobMessage, setSideJobMessage] = useState('')
   const [stats, setStats] = useState<SideJobStats | null>(null)
+  
+  // ストップウォッチの状態
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const [startTime, setStartTime] = useState<number | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   const today = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -41,6 +46,22 @@ export default function Home() {
     fetchPreviousWeight()
     fetchSideJobStats()
   }, [])
+
+  // ストップウォッチの更新
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null
+    
+    if (isTimerRunning && startTime !== null) {
+      interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        setElapsedSeconds(elapsed)
+      }, 1000)
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isTimerRunning, startTime])
 
   const fetchLatestWeight = async () => {
     try {
@@ -106,7 +127,7 @@ export default function Home() {
       })
 
       if (res.ok) {
-        const newWeight = await res.json()
+        await res.json()
         
         // 前日比の計算
         let diff = 0
@@ -171,6 +192,10 @@ export default function Home() {
         setSideJobMinutes('')
         setSideJobMemo('')
         
+        // タイマーをリセット
+        setElapsedSeconds(0)
+        setStartTime(null)
+        
         // 統計を再取得
         await fetchSideJobStats()
       } else {
@@ -182,6 +207,38 @@ export default function Home() {
     } finally {
       setSideJobLoading(false)
     }
+  }
+
+  const handleStartStopTimer = () => {
+    if (isTimerRunning) {
+      // タイマー停止 - 経過時間を分に変換して入力欄に設定
+      setIsTimerRunning(false)
+      const minutes = Math.ceil(elapsedSeconds / 60)
+      setSideJobMinutes(minutes.toString())
+    } else {
+      // タイマー開始
+      setIsTimerRunning(true)
+      setStartTime(Date.now())
+      setElapsedSeconds(0)
+    }
+  }
+
+  const handleResetTimer = () => {
+    setIsTimerRunning(false)
+    setStartTime(null)
+    setElapsedSeconds(0)
+    setSideJobMinutes('')
+  }
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
   const getDiff = () => {
@@ -270,6 +327,39 @@ export default function Home() {
           <p className="text-sm text-gray-500 mb-6">
             {today}
           </p>
+
+          {/* ストップウォッチ */}
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="text-center mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">ストップウォッチ</p>
+              <p className="text-4xl font-bold text-indigo-600 font-mono">
+                {formatTime(elapsedSeconds)}
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleStartStopTimer}
+                className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+                  isTimerRunning
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {isTimerRunning ? '⏸ 停止' : '▶ 開始'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleResetTimer}
+                disabled={isTimerRunning}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                🔄 リセット
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleSideJobSubmit} className="space-y-4">
             <div>
