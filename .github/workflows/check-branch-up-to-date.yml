@@ -19,12 +19,12 @@ jobs:
 
       - name: mainブランチの最新情報を取得
         run: |
-          git fetch origin main:main
+          git fetch origin main
 
       - name: PRブランチがmainを取り込んでいるか確認
         run: |
           # mainブランチの最新コミットを取得
-          MAIN_COMMIT=$(git rev-parse main)
+          MAIN_COMMIT=$(git rev-parse origin/main)
           echo "mainブランチの最新コミット: $MAIN_COMMIT"
 
           # 現在のブランチがmainの最新コミットを含んでいるか確認
