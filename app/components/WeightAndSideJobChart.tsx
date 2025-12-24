@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,6 +10,7 @@ import {
   ResponsiveContainer,
   Bar,
   ComposedChart,
+  Line,
 } from 'recharts'
 
 interface WeightData {
@@ -97,7 +96,7 @@ export default function WeightAndSideJobChart() {
       // 日付順にソート
       const sortedData = Array.from(dataMap.entries())
         .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-        .map(([_, data]) => data)
+        .map(([, data]) => data)
 
       setChartData(sortedData)
     } catch (error) {
