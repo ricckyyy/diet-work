@@ -193,6 +193,7 @@ export default function Home() {
         setSideJobMemo('')
         
         // タイマーをリセット
+        setIsTimerRunning(false)
         setElapsedSeconds(0)
         setStartTime(null)
         
@@ -213,7 +214,7 @@ export default function Home() {
     if (isTimerRunning) {
       // タイマー停止 - 経過時間を分に変換して入力欄に設定
       setIsTimerRunning(false)
-      const minutes = Math.ceil(elapsedSeconds / 60)
+      const minutes = elapsedSeconds > 0 ? Math.ceil(elapsedSeconds / 60) : 0
       setSideJobMinutes(minutes.toString())
     } else {
       // タイマー開始
