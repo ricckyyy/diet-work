@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     name: バージョン自動更新とリリース作成
     # バージョン更新コミットによる無限ループを防ぐ
-    if: "!contains(github.event.head_commit.message, 'chore: バージョンを')"
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     
     steps:
       - name: リポジトリのチェックアウト
@@ -39,10 +39,21 @@ jobs:
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "現在のバージョン: $CURRENT_VERSION"
       
+      - name: 前回のタグを取得（バージョンアップ前）
+        id: get_previous_tag
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "前回のタグ: なし（最初のリリース）"
+          else
+            echo "前回のタグ: $PREVIOUS_TAG"
+          fi
+      
       - name: バージョンをインクリメント
         id: bump_version
         run: |
-          npm version patch -m "chore: バージョンを %s に更新"
+          npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "新しいバージョン: $NEW_VERSION"
@@ -54,19 +65,18 @@ jobs:
       - name: リリースノートを生成
         id: release_notes
         run: |
-          # 前回のタグを安全に取得
-          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
+          PREVIOUS_TAG="${{ steps.get_previous_tag.outputs.previous_tag }}"
           
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "最初のリリースです"
             NOTES="## 🎉 最初のリリース\n\n"
             NOTES+="### 変更内容\n"
-            NOTES+="$(git log --pretty=format:'- %s' | head -10)"
+            NOTES+="$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)"
           else
             echo "前回のタグ: $PREVIOUS_TAG"
             NOTES="## 📝 変更内容\n\n"
             NOTES+="### コミット履歴\n"
-            NOTES+="$(git log $PREVIOUS_TAG..HEAD --pretty=format:'- %s (%h)' --no-merges)"
+            NOTES+="$(git log $PREVIOUS_TAG..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを')"
           fi
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo -e "$NOTES" >> $GITHUB_OUTPUT

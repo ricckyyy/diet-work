@@ -83,9 +83,10 @@ jobs:
         if: github.event.inputs.deploy_target == 'cloudflare-pages'
         run: |
           APP_NAME="${GITHUB_REPOSITORY#*/}"
+          COMPAT_DATE=$(date +%Y-%m-%d)
           cat > wrangler.toml << EOF
           name = "$APP_NAME"
-          compatibility_date = "2024-12-24"
+          compatibility_date = "$COMPAT_DATE"
           
           [build]
             command = "npm run build"
@@ -150,13 +151,21 @@ jobs:
         if: github.event.inputs.deploy_target == 'render'
         run: |
           APP_NAME="${GITHUB_REPOSITORY#*/}"
+          
+          # Prismaを使用しているか確認
+          if [ -f "prisma/schema.prisma" ]; then
+            BUILD_CMD="npm install && npm run build && npx prisma generate"
+          else
+            BUILD_CMD="npm install && npm run build"
+          fi
+          
           cat > render.yaml << EOF
           services:
             - type: web
               name: $APP_NAME
               env: node
               plan: free
-              buildCommand: npm install && npm run build && npx prisma generate
+              buildCommand: $BUILD_CMD
               startCommand: npm run start
               envVars:
                 - key: NODE_VERSION
