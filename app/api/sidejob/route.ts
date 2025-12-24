@@ -31,12 +31,12 @@ export async function POST(request: NextRequest) {
 
 		let sideJobLog;
 		if (existingLog) {
-			// 存在する場合は、既存の分数に新しい分数を加算
+			// 存在する場合は、既存の分数に新しい分数を加算（アトミック操作）
 			sideJobLog = await prisma.sideJobLog.update({
 				where: { date: normalizedDate },
 				data: {
-					minutes: existingLog.minutes + minutesValue,
-					memo: memo || existingLog.memo, // メモは新しい値があれば更新
+					minutes: { increment: minutesValue },
+					...(memo && { memo }), // メモが提供された場合のみ更新
 				},
 			});
 		} else {
