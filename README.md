@@ -17,7 +17,9 @@
 
 - **フロントエンド**: Next.js 16 (App Router) + TypeScript
 - **スタイリング**: Tailwind CSS
-- **データベース**: SQLite (Prisma ORM)
+- **データベース**: PostgreSQL
+- **ORM**: Prisma
+- **デプロイ**: Vercel対応済み
 - **認証**: なし (MVP では単一ユーザー前提)
 
 ## 機能
@@ -43,6 +45,34 @@
 
 - Node.js 20.9.0 以上 (推奨: 20.x LTS)
 - npm または yarn
+- PostgreSQL データベース（ローカル or クラウド）
+
+### データベースのセットアップ
+
+開発環境でPostgreSQLを使用するため、以下のいずれかの方法でデータベースを用意してください：
+
+#### オプション1: Dockerを使用（推奨）
+
+```bash
+# PostgreSQLをDockerで起動
+docker run --name diet-work-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=diet_work \
+  -p 5432:5432 \
+  -d postgres:16
+
+# .envファイルを作成
+echo 'DATABASE_URL="postgresql://postgres:postgres@localhost:5432/diet_work?schema=public"' > .env
+```
+
+#### オプション2: ローカルにPostgreSQLをインストール
+
+システムにPostgreSQLをインストールし、データベースを作成してから `.env` ファイルに接続文字列を設定してください。
+
+#### オプション3: クラウドデータベースを使用
+
+Supabase、Neon、またはVercel Postgresなどのクラウドデータベースサービスを使用し、接続文字列を `.env` ファイルに設定してください。
 
 ### インストール
 
@@ -53,6 +83,10 @@ cd diet-work
 
 # 依存パッケージをインストール
 npm install
+
+# .envファイルを作成（.env.exampleを参考に）
+cp .env.example .env
+# DATABASE_URLを編集
 
 # Prismaのセットアップ
 npx prisma generate
@@ -66,7 +100,7 @@ npm run dev
 
 ## データベース
 
-SQLite を使用しています。データは `prisma/dev.db` に保存されます。
+PostgreSQL を使用しています。開発環境でも本番環境でも同じデータベースエンジンを使用します。
 
 ### マイグレーション
 
@@ -231,6 +265,91 @@ mainブランチに変更がプッシュされると、自動的にバージョ�
 **継続的デプロイ**:
 デプロイ設定をマージ後、mainブランチへのプッシュで自動的にデプロイされます。
 
+## Vercelへのデプロイ
+
+このアプリケーションは Vercel にデプロイできるように設定されています。
+
+### 前提条件
+
+- [Vercel](https://vercel.com) アカウント
+- GitHubとVercelの連携
+
+### デプロイ手順
+
+#### 1. Vercelプロジェクトの作成
+
+1. [Vercel Dashboard](https://vercel.com/dashboard) にアクセス
+2. 「Add New...」→「Project」をクリック
+3. このGitHubリポジトリを選択
+4. 「Import」をクリック
+
+#### 2. 環境変数の設定
+
+Vercel PostgresまたはSupabaseなどのPostgreSQLデータベースを使用します。
+
+プロジェクト設定で以下の環境変数を設定：
+
+```
+DATABASE_URL=postgresql://user:password@host:port/database?schema=public
+```
+
+データベースの準備方法は「データベースの選択肢」セクションを参照してください。
+
+#### 3. ビルド設定の確認
+
+`vercel.json` で以下の設定が適用されます：
+
+- **Build Command**: `prisma generate && next build`
+- **Install Command**: `npm install`
+- **Framework**: Next.js
+
+これらの設定により、デプロイ時に自動的にPrisma Clientが生成されます。
+
+#### 4. デプロイの実行
+
+設定が完了したら「Deploy」をクリックします。数分でデプロイが完了し、アプリケーションのURLが発行されます。
+
+### データベースの選択肢
+
+#### オプション1: Vercel Postgres（推奨）
+
+1. Vercel Dashboardでプロジェクトを開く
+2. 「Storage」タブをクリック
+3. 「Create Database」→「Postgres」を選択
+4. データベースが作成され、自動的に `DATABASE_URL` が設定される
+
+#### オプション2: Supabase
+
+1. [Supabase](https://supabase.com) でプロジェクトを作成
+2. Database の Connection String を取得
+3. Vercelの環境変数に `DATABASE_URL` を設定
+
+#### オプション3: その他のPostgreSQLサービス
+
+Neon、Railway、Renderなど、お好みのPostgreSQLサービスを使用できます。
+
+### マイグレーションの実行
+
+初回デプロイ後にマイグレーションを実行する必要があります：
+
+```bash
+# ローカルでマイグレーションを作成
+npx prisma migrate dev --name init
+
+# 本番環境でマイグレーションを実行（Vercel CLIを使用）
+vercel env pull .env.production
+npx prisma migrate deploy
+```
+
+### 継続的デプロイ
+
+GitHubの `main` ブランチにプッシュすると、自動的にVercelにデプロイされます。
+プルリクエストを作成すると、プレビューデプロイも自動的に作成されます。
+
+### デプロイの確認
+
+デプロイが成功したら、Vercelが発行したURLにアクセスしてアプリケーションの動作を確認してください。
+
 ## トラブルシューティング
 
 ### Node.js のバージョンが古い
@@ -250,9 +369,20 @@ nodenv local 20.9.0
 ### データベースエラー
 
 ```bash
-# データベースをリセット
-rm prisma/dev.db
+# マイグレーションをリセットして再作成
+npx prisma migrate reset
+
+# または、マイグレーションを再実行
 npx prisma migrate dev
+```
+
+### PostgreSQL接続エラー
+
+データベース接続文字列が正しいか確認してください。`.env`ファイルの `DATABASE_URL` を確認し、データベースが起動しているか確認してください。
+
+```bash
+# Dockerを使用している場合、PostgreSQLコンテナが起動しているか確認
+docker ps | grep postgres
 ```
 
 ## ライセンス
