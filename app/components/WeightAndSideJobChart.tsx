@@ -35,8 +35,10 @@ interface ChartDataPoint {
 export default function WeightAndSideJobChart() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     fetchData()
   }, [])
 
@@ -63,10 +65,8 @@ export default function WeightAndSideJobChart() {
 
       // 体重データを追加
       weights.forEach(w => {
-        const dateStr = new Date(w.date).toLocaleDateString('ja-JP', {
-          month: 'short',
-          day: 'numeric'
-        })
+        const date = new Date(w.date)
+        const dateStr = `${date.getMonth() + 1}/${date.getDate()}`
         dataMap.set(w.date, {
           date: dateStr,
           weight: w.value,
@@ -77,10 +77,8 @@ export default function WeightAndSideJobChart() {
       // 副業データを追加
       sideJobs.forEach(s => {
         const existing = dataMap.get(s.date)
-        const dateStr = new Date(s.date).toLocaleDateString('ja-JP', {
-          month: 'short',
-          day: 'numeric'
-        })
+        const date = new Date(s.date)
+        const dateStr = `${date.getMonth() + 1}/${date.getDate()}`
         
         if (existing) {
           existing.minutes = s.minutes
@@ -106,7 +104,7 @@ export default function WeightAndSideJobChart() {
     }
   }
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4">📈 推移グラフ</h2>
