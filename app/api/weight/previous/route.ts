@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 
 export async function GET() {
   try {
+    const session = await auth()
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     // 最新の日付を取得
     const latest = await prisma.weight.findFirst({
+      where: { userId: session.user.id },
       orderBy: { date: 'desc' },
     })
 
@@ -18,6 +29,7 @@ export async function GET() {
     // 最新の日付より前のデータを取得
     const previousWeight = await prisma.weight.findFirst({
       where: {
+        userId: session.user.id,
         date: { lt: latest.date },
       },
       orderBy: { date: 'desc' },

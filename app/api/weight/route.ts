@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { date, value } = await request.json()
 
     if (!date || value === undefined) {
@@ -26,9 +36,18 @@ export async function POST(request: NextRequest) {
 
     // upsert: 存在すれば更新、なければ作成
     const weight = await prisma.weight.upsert({
-      where: { date: normalizedDate },
+      where: { 
+        userId_date: {
+          userId: session.user.id,
+          date: normalizedDate
+        }
+      },
       update: { value: weightValue },
-      create: { date: normalizedDate, value: weightValue },
+      create: { 
+        userId: session.user.id,
+        date: normalizedDate, 
+        value: weightValue 
+      },
     })
 
     return NextResponse.json(weight)
