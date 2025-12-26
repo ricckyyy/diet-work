@@ -3,8 +3,9 @@ import { signIn } from "@/auth"
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: { callbackUrl?: string }
+  searchParams: Promise<{ callbackUrl?: string }>
 }) {
+  const params = await searchParams
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
@@ -22,7 +23,7 @@ export default async function SignInPage({
             action={async () => {
               "use server"
               await signIn("google", {
-                redirectTo: searchParams.callbackUrl ?? "/",
+                redirectTo: params.callbackUrl ?? "/",
               })
             }}
           >
