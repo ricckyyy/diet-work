@@ -19,23 +19,26 @@
 - **スタイリング**: Tailwind CSS
 - **データベース**: PostgreSQL
 - **ORM**: Prisma
+- **認証**: NextAuth.js v5 (Google OAuth)
 - **デプロイ**: Vercel対応済み
-- **認証**: なし (MVP では単一ユーザー前提)
 
 ## 機能
 
-### 実装済み (MVP)
+### 実装済み
 
+- ✅ ユーザー認証 (Google OAuth)
+- ✅ マルチユーザー対応
 - ✅ 体重の入力・保存 (1日1回、小数点1桁まで)
 - ✅ 前日比の自動計算
 - ✅ 体重増加時の副業メッセージ表示
+- ✅ 副業時間の記録とストップウォッチ機能
+- ✅ 副業実績の統計表示（今日・今週・今月）
+- ✅ 体重と副業時間の推移グラフ
 - ✅ データの自動保存 (同日更新可能)
 
-### 将来拡張予定 (本仕様外)
+### 将来拡張予定
 
-- グラフ表示
-- PostgreSQL / Supabase 対応
-- 認証機能
+- より詳細なグラフ表示
 - iOS アプリ展開
 - SaaS 化
 
@@ -86,7 +89,11 @@ npm install
 
 # .envファイルを作成（.env.exampleを参考に）
 cp .env.example .env
-# DATABASE_URLを編集
+# .envファイルを編集して以下を設定:
+# - DATABASE_URL: データベース接続文字列
+# - AUTH_SECRET: 認証用シークレット（openssl rand -base64 32 で生成）
+# - AUTH_GOOGLE_ID: Google OAuth クライアントID
+# - AUTH_GOOGLE_SECRET: Google OAuth クライアントシークレット
 
 # Prismaのセットアップ
 npx prisma generate
@@ -97,6 +104,26 @@ npm run dev
 ```
 
 開発サーバーが起動したら、ブラウザで http://localhost:3000 にアクセスしてください。
+
+### Google OAuth の設定
+
+アプリケーションにログインするには、Google OAuth の設定が必要です。
+
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. 新しいプロジェクトを作成（または既存のプロジェクトを選択）
+3. 「APIとサービス」→「認証情報」に移動
+4. 「認証情報を作成」→「OAuth クライアント ID」を選択
+5. アプリケーションの種類で「ウェブアプリケーション」を選択
+6. 承認済みのリダイレクト URI に以下を追加:
+   - 開発環境: `http://localhost:3000/api/auth/callback/google`
+   - 本番環境: `https://your-domain.com/api/auth/callback/google`
+7. クライアント ID とクライアントシークレットをコピー
+8. `.env` ファイルに以下を設定:
+   ```
+   AUTH_GOOGLE_ID="取得したクライアントID"
+   AUTH_GOOGLE_SECRET="取得したクライアントシークレット"
+   AUTH_SECRET="openssl rand -base64 32 で生成したランダム文字列"
+   ```
 
 ## データベース
 
@@ -141,9 +168,11 @@ diet-work/
 
 ## API エンドポイント
 
+**認証**: すべてのAPIエンドポイントは認証が必要です。ログインしていないユーザーは401エラーが返されます。
+
 ### POST /api/weight
 
-体重データを保存・更新
+体重データを保存・更新（ユーザーごとに管理）
 
 **リクエスト:**
 ```json
@@ -175,12 +204,21 @@ diet-work/
 ## 使い方
 
 1. アプリを開く
-2. 今日の体重を入力 (小数点1桁まで)
-3. 「保存」ボタンをクリック
-4. 前日比が表示される
-5. 体重が増加している場合、「副業タイム」メッセージが表示される
+2. Googleアカウントでログイン
+3. 今日の体重を入力 (小数点1桁まで)
+4. 「保存」ボタンをクリック
+5. 前日比が表示される
+6. 体重が増加している場合、「副業タイム」メッセージが表示される
+7. 副業時間をストップウォッチで計測、または手動で入力
+8. 副業実績が自動的に集計される
 
 ## 開発メモ
+
+### 認証について
+
+- Google OAuth を使用したシングルサインオン
+- ユーザーごとにデータが分離されて管理される
+- セッションはデータベースに保存される
 
 ### データの保持について
 
@@ -291,7 +329,13 @@ Vercel PostgresまたはSupabaseなどのPostgreSQLデータベースを使用�
 
 ```
 DATABASE_URL=postgresql://user:password@host:port/database?schema=public
+AUTH_SECRET=ランダムな文字列（openssl rand -base64 32 で生成）
+AUTH_GOOGLE_ID=Google OAuthクライアントID
+AUTH_GOOGLE_SECRET=Google OAuthクライアントシークレット
+AUTH_URL=https://your-app-name.vercel.app
 ```
+
+**重要**: Google Cloud Consoleで、Vercelのデプロイ先URL（例: `https://your-app-name.vercel.app/api/auth/callback/google`）を承認済みのリダイレクトURIに追加してください。
 
 データベースの準備方法は「データベースの選択肢」セクションを参照してください。
 
