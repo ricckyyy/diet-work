@@ -34,15 +34,19 @@ export default function Home() {
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const [startTime, setStartTime] = useState<number | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-
-  const today = new Date().toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long'
-  })
+  
+  // 日付の状態（ハイドレーションエラー回避のためクライアント側でのみ生成）
+  const [today, setToday] = useState('')
 
   useEffect(() => {
+    // クライアント側でのみ日付を生成
+    setToday(new Date().toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    }))
+    
     fetchLatestWeight()
     fetchPreviousWeight()
     fetchSideJobStats()
