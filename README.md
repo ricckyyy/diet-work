@@ -332,10 +332,29 @@ DATABASE_URL=postgresql://user:password@host:port/database?schema=public
 AUTH_SECRET=ランダムな文字列（openssl rand -base64 32 で生成）
 AUTH_GOOGLE_ID=Google OAuthクライアントID
 AUTH_GOOGLE_SECRET=Google OAuthクライアントシークレット
-AUTH_URL=https://your-app-name.vercel.app
 ```
 
-**重要**: Google Cloud Consoleで、Vercelのデプロイ先URL（例: `https://your-app-name.vercel.app/api/auth/callback/google`）を承認済みのリダイレクトURIに追加してください。
+**重要な設定事項:**
+
+1. **Google Cloud Consoleでのリダイレクト URI 設定**
+   
+   以下のURLをすべて承認済みのリダイレクトURIに追加してください：
+   - 本番環境: `https://your-app-name.vercel.app/api/auth/callback/google`
+   - Preview環境: `https://*.vercel.app/api/auth/callback/google` (ワイルドカードで設定)
+   
+   または、各Preview URLを個別に追加：
+   - `https://your-app-name-git-branch-username.vercel.app/api/auth/callback/google`
+
+2. **Vercelの環境変数スコープ**
+   
+   環境変数を設定する際、以下のすべてにチェックを入れてください：
+   - ✅ Production
+   - ✅ Preview
+   - ✅ Development
+
+3. **`AUTH_URL`は不要**
+   
+   NextAuth.js v5の`trustHost: true`設定により、Vercelの動的URLが自動的に検出されます。
 
 データベースの準備方法は「データベースの選択肢」セクションを参照してください。
 
