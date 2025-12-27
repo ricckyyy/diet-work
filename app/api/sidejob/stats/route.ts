@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export async function GET() {
 	try {
+		const session = await auth();
+
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
 		const now = new Date();
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -17,12 +24,16 @@ export async function GET() {
 
 		// 今日の実績
 		const todayLog = await prisma.sideJobLog.findFirst({
-			where: { date: today },
+			where: {
+				userId: session.user.id,
+				date: today,
+			},
 		});
 
 		// 今週の合計
 		const weekLogs = await prisma.sideJobLog.findMany({
 			where: {
+				userId: session.user.id,
 				date: {
 					gte: weekStart,
 					lte: today,
@@ -34,6 +45,7 @@ export async function GET() {
 		// 今月の合計
 		const monthLogs = await prisma.sideJobLog.findMany({
 			where: {
+				userId: session.user.id,
 				date: {
 					gte: monthStart,
 					lte: today,

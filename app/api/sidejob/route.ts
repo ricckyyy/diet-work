@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export async function POST(request: NextRequest) {
 	try {
+		const session = await auth();
+
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
 		const { date, minutes, memo } = await request.json();
 
 		if (!date || minutes === undefined) {
@@ -26,14 +33,24 @@ export async function POST(request: NextRequest) {
 
 		// 既存のレコードを確認
 		const existingLog = await prisma.sideJobLog.findUnique({
-			where: { date: normalizedDate },
+			where: {
+				userId_date: {
+					userId: session.user.id,
+					date: normalizedDate,
+				},
+			},
 		});
 
 		let sideJobLog;
 		if (existingLog) {
 			// 存在する場合は、既存の分数に新しい分数を加算（アトミック操作）
 			sideJobLog = await prisma.sideJobLog.update({
-				where: { date: normalizedDate },
+				where: {
+					userId_date: {
+						userId: session.user.id,
+						date: normalizedDate,
+					},
+				},
 				data: {
 					minutes: { increment: minutesValue },
 					...(memo && { memo }), // メモが提供された場合のみ更新
@@ -43,6 +60,7 @@ export async function POST(request: NextRequest) {
 			// 存在しない場合は新規作成
 			sideJobLog = await prisma.sideJobLog.create({
 				data: {
+					userId: session.user.id,
 					date: normalizedDate,
 					minutes: minutesValue,
 					memo: memo || null,
