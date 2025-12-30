@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { getUserIdByEmail } from '@/lib/auth-helper-db';
 
 export async function POST(request: NextRequest) {
 	try {
 		const session = await auth();
 
-		if (!session?.user?.id) {
+		if (!session?.user?.email) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
+
+		const userId = await getUserIdByEmail(session.user.email);
 
 		const { date, minutes, memo } = await request.json();
 
@@ -35,7 +38,7 @@ export async function POST(request: NextRequest) {
 		const existingLog = await prisma.sideJobLog.findUnique({
 			where: {
 				userId_date: {
-					userId: session.user.id,
+					userId: userId,
 					date: normalizedDate,
 				},
 			},
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
 			sideJobLog = await prisma.sideJobLog.update({
 				where: {
 					userId_date: {
-						userId: session.user.id,
+						userId: userId,
 						date: normalizedDate,
 					},
 				},
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
 			// 存在しない場合は新規作成
 			sideJobLog = await prisma.sideJobLog.create({
 				data: {
-					userId: session.user.id,
+					userId: userId,
 					date: normalizedDate,
 					minutes: minutesValue,
 					memo: memo || null,

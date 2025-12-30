@@ -17,28 +17,23 @@
 
 - **フロントエンド**: Next.js 16 (App Router) + TypeScript
 - **スタイリング**: Tailwind CSS
-- **データベース**: PostgreSQL
-- **ORM**: Prisma
-- **認証**: NextAuth.js v5 (Google OAuth)
-- **デプロイ**: Vercel対応済み
+- **データベース**: SQLite (Prisma ORM)
+- **認証**: なし (MVP では単一ユーザー前提)
 
 ## 機能
 
-### 実装済み
+### 実装済み (MVP)
 
-- ✅ ユーザー認証 (Google OAuth)
-- ✅ マルチユーザー対応
 - ✅ 体重の入力・保存 (1日1回、小数点1桁まで)
 - ✅ 前日比の自動計算
 - ✅ 体重増加時の副業メッセージ表示
-- ✅ 副業時間の記録とストップウォッチ機能
-- ✅ 副業実績の統計表示（今日・今週・今月）
-- ✅ 体重と副業時間の推移グラフ
 - ✅ データの自動保存 (同日更新可能)
 
-### 将来拡張予定
+### 将来拡張予定 (本仕様外)
 
-- より詳細なグラフ表示
+- グラフ表示
+- PostgreSQL / Supabase 対応
+- 認証機能
 - iOS アプリ展開
 - SaaS 化
 
@@ -48,34 +43,6 @@
 
 - Node.js 20.9.0 以上 (推奨: 20.x LTS)
 - npm または yarn
-- PostgreSQL データベース（ローカル or クラウド）
-
-### データベースのセットアップ
-
-開発環境でPostgreSQLを使用するため、以下のいずれかの方法でデータベースを用意してください：
-
-#### オプション1: Dockerを使用（推奨）
-
-```bash
-# PostgreSQLをDockerで起動
-docker run --name diet-work-postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=diet_work \
-  -p 5432:5432 \
-  -d postgres:16
-
-# .envファイルを作成
-echo 'DATABASE_URL="postgresql://postgres:postgres@localhost:5432/diet_work?schema=public"' > .env
-```
-
-#### オプション2: ローカルにPostgreSQLをインストール
-
-システムにPostgreSQLをインストールし、データベースを作成してから `.env` ファイルに接続文字列を設定してください。
-
-#### オプション3: クラウドデータベースを使用
-
-Supabase、Neon、またはVercel Postgresなどのクラウドデータベースサービスを使用し、接続文字列を `.env` ファイルに設定してください。
 
 ### インストール
 
@@ -87,14 +54,6 @@ cd diet-work
 # 依存パッケージをインストール
 npm install
 
-# .envファイルを作成（.env.exampleを参考に）
-cp .env.example .env
-# .envファイルを編集して以下を設定:
-# - DATABASE_URL: データベース接続文字列
-# - AUTH_SECRET: 認証用シークレット（openssl rand -base64 32 で生成）
-# - AUTH_GOOGLE_ID: Google OAuth クライアントID
-# - AUTH_GOOGLE_SECRET: Google OAuth クライアントシークレット
-
 # Prismaのセットアップ
 npx prisma generate
 npx prisma migrate dev
@@ -105,29 +64,9 @@ npm run dev
 
 開発サーバーが起動したら、ブラウザで http://localhost:3000 にアクセスしてください。
 
-### Google OAuth の設定
-
-アプリケーションにログインするには、Google OAuth の設定が必要です。
-
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
-2. 新しいプロジェクトを作成（または既存のプロジェクトを選択）
-3. 「APIとサービス」→「認証情報」に移動
-4. 「認証情報を作成」→「OAuth クライアント ID」を選択
-5. アプリケーションの種類で「ウェブアプリケーション」を選択
-6. 承認済みのリダイレクト URI に以下を追加:
-   - 開発環境: `http://localhost:3000/api/auth/callback/google`
-   - 本番環境: `https://your-domain.com/api/auth/callback/google`
-7. クライアント ID とクライアントシークレットをコピー
-8. `.env` ファイルに以下を設定:
-   ```
-   AUTH_GOOGLE_ID="取得したクライアントID"
-   AUTH_GOOGLE_SECRET="取得したクライアントシークレット"
-   AUTH_SECRET="openssl rand -base64 32 で生成したランダム文字列"
-   ```
-
 ## データベース
 
-PostgreSQL を使用しています。開発環境でも本番環境でも同じデータベースエンジンを使用します。
+SQLite を使用しています。データは `prisma/dev.db` に保存されます。
 
 ### マイグレーション
 
@@ -168,11 +107,9 @@ diet-work/
 
 ## API エンドポイント
 
-**認証**: すべてのAPIエンドポイントは認証が必要です。ログインしていないユーザーは401エラーが返されます。
-
 ### POST /api/weight
 
-体重データを保存・更新（ユーザーごとに管理）
+体重データを保存・更新
 
 **リクエスト:**
 ```json
@@ -204,21 +141,12 @@ diet-work/
 ## 使い方
 
 1. アプリを開く
-2. Googleアカウントでログイン
-3. 今日の体重を入力 (小数点1桁まで)
-4. 「保存」ボタンをクリック
-5. 前日比が表示される
-6. 体重が増加している場合、「副業タイム」メッセージが表示される
-7. 副業時間をストップウォッチで計測、または手動で入力
-8. 副業実績が自動的に集計される
+2. 今日の体重を入力 (小数点1桁まで)
+3. 「保存」ボタンをクリック
+4. 前日比が表示される
+5. 体重が増加している場合、「副業タイム」メッセージが表示される
 
 ## 開発メモ
-
-### 認証について
-
-- Google OAuth を使用したシングルサインオン
-- ユーザーごとにデータが分離されて管理される
-- セッションはデータベースに保存される
 
 ### データの保持について
 
@@ -303,116 +231,6 @@ mainブランチに変更がプッシュされると、自動的にバージョ�
 **継続的デプロイ**:
 デプロイ設定をマージ後、mainブランチへのプッシュで自動的にデプロイされます。
 
-## Vercelへのデプロイ
-
-このアプリケーションは Vercel にデプロイできるように設定されています。
-
-### 前提条件
-
-- [Vercel](https://vercel.com) アカウント
-- GitHubとVercelの連携
-
-### デプロイ手順
-
-#### 1. Vercelプロジェクトの作成
-
-1. [Vercel Dashboard](https://vercel.com/dashboard) にアクセス
-2. 「Add New...」→「Project」をクリック
-3. このGitHubリポジトリを選択
-4. 「Import」をクリック
-
-#### 2. 環境変数の設定
-
-Vercel PostgresまたはSupabaseなどのPostgreSQLデータベースを使用します。
-
-プロジェクト設定で以下の環境変数を設定：
-
-```
-DATABASE_URL=postgresql://user:password@host:port/database?schema=public
-AUTH_SECRET=ランダムな文字列（openssl rand -base64 32 で生成）
-AUTH_GOOGLE_ID=Google OAuthクライアントID
-AUTH_GOOGLE_SECRET=Google OAuthクライアントシークレット
-```
-
-**重要な設定事項:**
-
-1. **Google Cloud Consoleでのリダイレクト URI 設定**
-   
-   以下のURLをすべて承認済みのリダイレクトURIに追加してください：
-   - 本番環境: `https://your-app-name.vercel.app/api/auth/callback/google`
-   - Preview環境: `https://*.vercel.app/api/auth/callback/google` (ワイルドカードで設定)
-   
-   または、各Preview URLを個別に追加：
-   - `https://your-app-name-git-branch-username.vercel.app/api/auth/callback/google`
-
-2. **Vercelの環境変数スコープ**
-   
-   環境変数を設定する際、以下のすべてにチェックを入れてください：
-   - ✅ Production
-   - ✅ Preview
-   - ✅ Development
-
-3. **`AUTH_URL`は不要**
-   
-   NextAuth.js v5の`trustHost: true`設定により、Vercelの動的URLが自動的に検出されます。
-
-データベースの準備方法は「データベースの選択肢」セクションを参照してください。
-
-#### 3. ビルド設定の確認
-
-`vercel.json` で以下の設定が適用されます：
-
-- **Build Command**: `prisma generate && next build`
-- **Install Command**: `npm install`
-- **Framework**: Next.js
-
-これらの設定により、デプロイ時に自動的にPrisma Clientが生成されます。
-
-#### 4. デプロイの実行
-
-設定が完了したら「Deploy」をクリックします。数分でデプロイが完了し、アプリケーションのURLが発行されます。
-
-### データベースの選択肢
-
-#### オプション1: Vercel Postgres（推奨）
-
-1. Vercel Dashboardでプロジェクトを開く
-2. 「Storage」タブをクリック
-3. 「Create Database」→「Postgres」を選択
-4. データベースが作成され、自動的に `DATABASE_URL` が設定される
-
-#### オプション2: Supabase
-
-1. [Supabase](https://supabase.com) でプロジェクトを作成
-2. Database の Connection String を取得
-3. Vercelの環境変数に `DATABASE_URL` を設定
-
-#### オプション3: その他のPostgreSQLサービス
-
-Neon、Railway、Renderなど、お好みのPostgreSQLサービスを使用できます。
-
-### マイグレーションの実行
-
-初回デプロイ後にマイグレーションを実行する必要があります：
-
-```bash
-# ローカルでマイグレーションを作成
-npx prisma migrate dev --name init
-
-# 本番環境でマイグレーションを実行（Vercel CLIを使用）
-vercel env pull .env.production
-npx prisma migrate deploy
-```
-
-### 継続的デプロイ
-
-GitHubの `main` ブランチにプッシュすると、自動的にVercelにデプロイされます。
-プルリクエストを作成すると、プレビューデプロイも自動的に作成されます。
-
-### デプロイの確認
-
-デプロイが成功したら、Vercelが発行したURLにアクセスしてアプリケーションの動作を確認してください。
-
 ## トラブルシューティング
 
 ### Node.js のバージョンが古い
@@ -432,20 +250,9 @@ nodenv local 20.9.0
 ### データベースエラー
 
 ```bash
-# マイグレーションをリセットして再作成
-npx prisma migrate reset
-
-# または、マイグレーションを再実行
+# データベースをリセット
+rm prisma/dev.db
 npx prisma migrate dev
-```
-
-### PostgreSQL接続エラー
-
-データベース接続文字列が正しいか確認してください。`.env`ファイルの `DATABASE_URL` を確認し、データベースが起動しているか確認してください。
-
-```bash
-# Dockerを使用している場合、PostgreSQLコンテナが起動しているか確認
-docker ps | grep postgres
 ```
 
 ## ライセンス
