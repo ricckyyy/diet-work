@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { getUserIdByEmail } from "@/lib/auth-helper-db";
 
 export async function GET(request: NextRequest) {
 	try {
 		const session = await auth();
 
-		if (!session?.user?.id) {
+		if (!session?.user?.email) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
+
+		const userId = await getUserIdByEmail(session.user.email);
 
 		const { searchParams } = new URL(request.url);
 		const limit = parseInt(searchParams.get("limit") || "10");
 
 		const logs = await prisma.sideJobLog.findMany({
-			where: { userId: session.user.id },
+			where: { userId },
 			orderBy: { date: "desc" },
 			take: limit,
 		});
