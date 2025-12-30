@@ -2,6 +2,10 @@
 
 # データベースセットアップスクリプト
 # PostgreSQLコンテナを起動し、Prismaのマイグレーションを実行します
+#
+# 使用方法:
+#   chmod +x setup-db.sh  # 初回のみ実行権限を付与
+#   ./setup-db.sh         # セットアップを実行
 
 set -e
 
@@ -44,7 +48,17 @@ fi
 
 # データベースの準備ができるまで待機
 echo "⏳ データベースの準備を待っています..."
-sleep 5
+for i in {1..30}; do
+    if docker exec diet-work-postgres pg_isready -U postgres > /dev/null 2>&1; then
+        echo "✅ データベースの準備が完了しました"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo "❌ データベースの準備がタイムアウトしました"
+        exit 1
+    fi
+    sleep 1
+done
 
 # Prisma Clientの生成
 echo "🔧 Prisma Clientを生成しています..."
@@ -52,7 +66,8 @@ npx prisma generate
 
 # マイグレーションの実行
 echo "📊 データベースマイグレーションを実行しています..."
-npx prisma migrate dev --name init
+# 既存のマイグレーションがあれば適用、なければスキップ
+npx prisma migrate deploy || npx prisma migrate dev
 
 echo ""
 echo "✅ セットアップが完了しました！"
