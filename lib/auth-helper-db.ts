@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma";
 
 /**
  * メールアドレスからユーザーIDを取得または作成する
@@ -36,4 +36,13 @@ export async function getUserIdByEmail(email: string): Promise<string> {
 	})
 
 	return newUser.id
+}
+
+		data: {
+			email,
+		},
+	});
+
+	return newUser.id;
+>>>>>>> bc362f3 (フォーマッター修正を適用)
 }
