@@ -12,28 +12,28 @@ import { prisma } from "@/lib/prisma"
  * @throws {Error} emailが無効な場合
  */
 export async function getUserIdByEmail(email: string): Promise<string> {
-  // メールアドレスのバリデーション
-  if (!email || typeof email !== 'string' || email.trim().length === 0) {
-    throw new Error('有効なメールアドレスが必要です')
-  }
+	// メールアドレスのバリデーション
+	if (!email || typeof email !== 'string' || email.trim().length === 0) {
+		throw new Error('有効なメールアドレスが必要です')
+	}
 
-  const normalizedEmail = email.trim().toLowerCase()
+	const normalizedEmail = email.trim().toLowerCase()
 
-  const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-  })
+	const user = await prisma.user.findUnique({
+		where: { email: normalizedEmail },
+	})
 
-  if (user) {
-    return user.id
-  }
+	if (user) {
+		return user.id
+	}
 
-  // ユーザーが存在しない場合は作成
-  // OAuth認証を通過したユーザーのみがここに到達するため安全
-  const newUser = await prisma.user.create({
-    data: {
-      email: normalizedEmail,
-    },
-  })
+	// ユーザーが存在しない場合は作成
+	// OAuth認証を通過したユーザーのみがここに到達するため安全
+	const newUser = await prisma.user.create({
+		data: {
+			email: normalizedEmail,
+		},
+	})
 
-  return newUser.id
+	return newUser.id
 }
