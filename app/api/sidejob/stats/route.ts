@@ -28,7 +28,7 @@ export async function GET() {
 		// 今日の実績
 		const todayLog = await prisma.sideJobLog.findFirst({
 			where: {
-				userId: userId,
+				userId,
 				date: today,
 			},
 		});
@@ -36,7 +36,7 @@ export async function GET() {
 		// 今週の合計
 		const weekLogs = await prisma.sideJobLog.findMany({
 			where: {
-				userId: userId,
+				userId,
 				date: {
 					gte: weekStart,
 					lte: today,
@@ -48,7 +48,7 @@ export async function GET() {
 		// 今月の合計
 		const monthLogs = await prisma.sideJobLog.findMany({
 			where: {
-				userId: userId,
+				userId,
 				date: {
 					gte: monthStart,
 					lte: today,

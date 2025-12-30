@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 		const limit = parseInt(searchParams.get("limit") || "10");
 
 		const logs = await prisma.sideJobLog.findMany({
-			where: { userId: userId },
+			where: { userId },
 			orderBy: { date: "desc" },
 			take: limit,
 		});

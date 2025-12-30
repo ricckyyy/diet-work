@@ -39,13 +39,13 @@ export async function POST(request: NextRequest) {
 		const weight = await prisma.weight.upsert({
 			where: {
 				userId_date: {
-					userId: userId,
+					userId,
 					date: normalizedDate,
 				},
 			},
 			update: { value: weightValue },
 			create: {
-				userId: userId,
+				userId,
 				date: normalizedDate,
 				value: weightValue,
 			},

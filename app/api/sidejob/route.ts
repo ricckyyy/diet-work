@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 		const existingLog = await prisma.sideJobLog.findUnique({
 			where: {
 				userId_date: {
-					userId: userId,
+					userId,
 					date: normalizedDate,
 				},
 			},
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 			sideJobLog = await prisma.sideJobLog.update({
 				where: {
 					userId_date: {
-						userId: userId,
+						userId,
 						date: normalizedDate,
 					},
 				},
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 			// 存在しない場合は新規作成
 			sideJobLog = await prisma.sideJobLog.create({
 				data: {
-					userId: userId,
+					userId,
 					date: normalizedDate,
 					minutes: minutesValue,
 					memo: memo || null,
