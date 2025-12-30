@@ -49,6 +49,28 @@
 - Node.js 20.9.0 以上 (推奨: 20.x LTS)
 - npm または yarn
 - PostgreSQL データベース（ローカル or クラウド）
+- Docker と Docker Compose（ローカル開発の場合、推奨）
+
+### クイックスタート（推奨）
+
+最速でアプリケーションを起動する方法:
+
+```bash
+# リポジトリをクローン
+git clone <repository-url>
+cd diet-work
+
+# 依存パッケージをインストール
+npm install
+
+# データベースを自動セットアップ（Dockerを使用）
+./setup-db.sh
+
+# 開発サーバーを起動
+npm run dev
+```
+
+**注意**: セットアップ後、`.env` ファイルを編集してGoogle OAuth認証情報を設定する必要があります。
 
 ### データベースのセットアップ
 
@@ -57,17 +79,19 @@
 #### オプション1: Dockerを使用（推奨）
 
 ```bash
-# PostgreSQLをDockerで起動
+# Docker Composeで起動（推奨）
+docker-compose up -d
+
+# または、docker runで起動
 docker run --name diet-work-postgres \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=diet_work \
   -p 5432:5432 \
   -d postgres:16
-
-# .envファイルを作成
-echo 'DATABASE_URL="postgresql://postgres:postgres@localhost:5432/diet_work?schema=public"' > .env
 ```
+
+**注意**: docker-compose.ymlファイルが既に用意されているので、`docker-compose up -d` を使用することをお勧めします。
 
 #### オプション2: ローカルにPostgreSQLをインストール
 
@@ -446,7 +470,40 @@ npx prisma migrate dev
 ```bash
 # Dockerを使用している場合、PostgreSQLコンテナが起動しているか確認
 docker ps | grep postgres
+
+# コンテナが起動していない場合は起動
+docker-compose up -d
+
+# または、setup-db.shスクリプトを使用
+./setup-db.sh
 ```
+
+#### よくある原因と解決方法
+
+1. **`.env`ファイルが存在しない**
+   ```bash
+   # .env.exampleからコピー
+   cp .env.example .env
+   ```
+
+2. **PostgreSQLコンテナが起動していない**
+   ```bash
+   # Docker Composeで起動
+   docker-compose up -d
+   ```
+
+3. **ポート5432が既に使用されている**
+   ```bash
+   # 使用中のプロセスを確認
+   lsof -i :5432
+   # または
+   netstat -an | grep 5432
+   ```
+
+4. **データベースマイグレーションが実行されていない**
+   ```bash
+   npx prisma migrate dev
+   ```
 
 ## ライセンス
 
