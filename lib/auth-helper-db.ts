@@ -38,11 +38,3 @@ export async function getUserIdByEmail(email: string): Promise<string> {
 	return newUser.id
 }
 
-		data: {
-			email,
-		},
-	});
-
-	return newUser.id;
->>>>>>> bc362f3 (フォーマッター修正を適用)
-}
