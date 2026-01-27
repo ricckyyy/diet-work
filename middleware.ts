@@ -22,8 +22,12 @@ export async function middleware(request: NextRequest) {
       userEmail: session?.user?.email,
     })
 
+    // 認証が不要なパスのリスト
+    const publicPaths = ["/auth/signin", "/test-dialog"]
+    const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
+    
     // 認証が必要なパスで、セッションがない場合はログインページにリダイレクト
-    if (!session && !request.nextUrl.pathname.startsWith("/auth/signin")) {
+    if (!session && !isPublicPath) {
       console.log("[Middleware] Redirecting to signin")
       const signInUrl = new URL("/auth/signin", request.url)
       signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname)
