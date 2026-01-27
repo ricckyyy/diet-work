@@ -6,7 +6,7 @@ import { Dialog, DialogTitle, DialogContent, Button } from '@mui/material';
 interface ContainedDialogProps {
   open: boolean;
   onClose: () => void;
-  containerRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLDivElement | null>;
 }
 
 export default function ContainedDialog({ open, onClose, containerRef }: ContainedDialogProps) {
