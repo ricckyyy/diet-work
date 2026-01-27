@@ -1,21 +1,16 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogTitle, DialogContent, Box, Button } from '@mui/material';
 import Link from 'next/link';
 
 export default function TestDialogPage() {
   const [open, setOpen] = useState(false);
   const [openBox, setOpenBox] = useState(false);
-  const containerRef = useRef(null);
-
-  // containerを取得する関数
-  const getContainer = useCallback(() => {
-    return containerRef.current;
-  }, []);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div style={{ padding: '40px' }}>
+    <Box sx={{ p: 5 }}>
       <h1 style={{ marginBottom: '20px' }}>Dialog in Box テスト</h1>
       <p style={{ marginBottom: '20px' }}>
         青い枠の中だけにDialogが表示されるかテストします
@@ -66,7 +61,7 @@ export default function TestDialogPage() {
           <Dialog
             open={openBox}
             onClose={() => setOpenBox(false)}
-            container={getContainer}
+            container={() => containerRef.current}
             disablePortal
             sx={{
               position: 'absolute',
@@ -84,11 +79,11 @@ export default function TestDialogPage() {
         </Box>
       </div>
 
-      <div style={{ marginTop: '40px' }}>
+      <Box sx={{ mt: 5 }}>
         <Link href="/" style={{ color: 'blue', textDecoration: 'underline' }}>
           ← トップページに戻る
         </Link>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
