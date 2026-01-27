@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import WeightAndSideJobChart from './components/WeightAndSideJobChart'
 
 interface WeightData {
@@ -482,6 +483,13 @@ export default function Home() {
           </div>
         )}
           </div>
+        </div>
+        
+        {/* テストページへのリンク */}
+        <div className="mt-6 text-center">
+          <Link href="/test-dialog" className="text-blue-600 hover:text-blue-800 underline">
+            Dialog in Box テストページ →
+          </Link>
         </div>
       </div>
     </div>
