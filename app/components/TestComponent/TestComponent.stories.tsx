@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { TestComponent } from './index';
 
 const meta: Meta<typeof TestComponent> = {
-  title: 'Components/TestComponent',
+  title: 'コンポーネント/TestComponent',
   component: TestComponent,
   parameters: {
     layout: 'centered',
@@ -16,20 +16,20 @@ type Story = StoryObj<typeof TestComponent>;
 // 1つ目のテスト - これは通常成功する
 export const First: Story = {
   args: {
-    title: 'First Test',
+    title: '最初のテスト',
   },
 };
 
 // 2つ目のテスト - ここでタイムアウトする可能性がある
 export const Second: Story = {
   args: {
-    title: 'Second Test',
+    title: '2つ目のテスト',
   },
 };
 
 // 3つ目のテスト - 追加のテストケース
 export const Third: Story = {
   args: {
-    title: 'Third Test',
+    title: '3つ目のテスト',
   },
 };

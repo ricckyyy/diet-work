@@ -15,7 +15,7 @@ const config: StorybookConfig = {
     check: false,
   },
   viteFinal: async (config) => {
-    // Vite specific configuration can be added here
+    // Vite固有の設定をここに追加できます
     return config;
   },
 };

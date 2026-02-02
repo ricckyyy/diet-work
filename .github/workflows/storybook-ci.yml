@@ -11,42 +11,42 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
+      - name: コードのチェックアウト
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Node.jsのセットアップ
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: 依存関係のインストール
         run: npm install --legacy-peer-deps
 
-      - name: Install Playwright browsers
+      - name: Playwrightブラウザのインストール
         run: npx playwright install chromium --with-deps
 
-      - name: Run ESLint
+      - name: ESLintの実行
         run: npm run lint
 
-      - name: Build Next.js
+      - name: Next.jsのビルド
         run: npm run build
 
-      - name: Build Storybook
+      - name: Storybookのビルド
         run: npm run build-storybook
 
-      - name: Start Storybook server
+      - name: Storybookサーバーの起動
         run: npm run storybook &
         env:
           CI: true
 
-      - name: Wait for Storybook
+      - name: Storybookの起動待機
         run: npx wait-on http://localhost:6006 --timeout 60000
 
-      - name: Run Storybook tests
+      - name: Storybookテストの実行
         run: npm run test-storybook
 
-      - name: Upload Storybook build
+      - name: Storybookビルドのアップロード
         if: always()
         uses: actions/upload-artifact@v4
         with:

@@ -16,7 +16,7 @@ const config: StorybookConfig = {
     check: false,
   },
   viteFinal: async (config) => {
-    // Next.js-like configuration for Vite
+    // Next.js風の設定をViteに適用
     if (config.resolve) {
       config.resolve.alias = {
         ...config.resolve.alias,

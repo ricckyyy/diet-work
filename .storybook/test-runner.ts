@@ -12,10 +12,10 @@ const config: TestRunnerConfig = {
       }
     });
     
-    console.log(`✅ Story tested: ${context.title}`);
+    console.log(`✅ ストーリーテスト完了: ${context.title}`);
   },
   async preVisit(page, context) {
-    console.log(`🧪 Testing story: ${context.title}`);
+    console.log(`🧪 ストーリーテスト開始: ${context.title}`);
   },
 };
 

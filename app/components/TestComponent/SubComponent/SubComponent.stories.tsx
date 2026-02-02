@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { SubComponent } from './index';
 
 const meta: Meta<typeof SubComponent> = {
-  title: 'Components/TestComponent/SubComponent',
+  title: 'コンポーネント/TestComponent/SubComponent',
   component: SubComponent,
   parameters: {
     layout: 'centered',
@@ -14,12 +14,12 @@ type Story = StoryObj<typeof SubComponent>;
 
 export const Default: Story = {
   args: {
-    content: 'This is a sub component',
+    content: 'これはサブコンポーネントです',
   },
 };
 
 export const LongContent: Story = {
   args: {
-    content: 'This is a sub component with a very long content that might cause issues',
+    content: 'これは非常に長いコンテンツを持つサブコンポーネントで、問題を引き起こす可能性があります',
   },
 };

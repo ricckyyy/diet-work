@@ -21,7 +21,7 @@ const config: StorybookConfig = {
     },
   },
   webpackFinal: async (config) => {
-    // Add TypeScript support
+    // TypeScriptサポートを追加
     if (config.resolve) {
       config.resolve.extensions = [
         ...(config.resolve.extensions || []),
@@ -29,18 +29,18 @@ const config: StorybookConfig = {
         '.tsx',
       ];
       
-      // Add path alias support
+      // パスエイリアスのサポートを追加
       config.resolve.alias = {
         ...config.resolve.alias,
         '@': path.resolve(__dirname, '../'),
       };
     }
     
-    // Add TypeScript loader
+    // TypeScriptローダーを追加
     config.module = config.module || {};
     config.module.rules = config.module.rules || [];
     
-    // Find the rule for js/jsx/ts/tsx and ensure TypeScript is handled
+    // js/jsx/ts/tsx用のルールを追加してTypeScriptが処理されるようにする
     config.module.rules.push({
       test: /\.(ts|tsx)$/,
       exclude: /node_modules/,

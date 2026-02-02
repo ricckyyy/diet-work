@@ -12,10 +12,10 @@ const config: TestRunnerConfig = {
       }
     });
     
-    console.log(`✅ [Next.js+Vite] Story tested: ${context.title}`);
+    console.log(`✅ [Next.js+Vite] ストーリーテスト完了: ${context.title}`);
   },
   async preVisit(page, context) {
-    console.log(`🧪 [Next.js+Vite] Testing story: ${context.title}`);
+    console.log(`🧪 [Next.js+Vite] ストーリーテスト開始: ${context.title}`);
   },
 };
 
