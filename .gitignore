@@ -46,3 +46,4 @@ prisma/dev.db-journal
 
 # Storybook
 storybook-static/
+storybook-static-vite/

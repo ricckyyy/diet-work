@@ -6,38 +6,63 @@
 
 このプロジェクトでは、「2つ目のStorybookテストでタイムアウトする」問題を再現し、デバッグするための環境を構築しました。
 
+**2つのビルダー構成を提供:**
+- **Webpack5版** (`.storybook/`) - 安定版、広くサポートされている
+- **Vite版** (`.storybook-vite/`) - 高速な開発体験、React専用構成
+
 ## インストール済みのパッケージ
 
 以下のパッケージがインストールされています:
 
 - `@storybook/react` - React用Storybookコア
-- `@storybook/react-webpack5` - Webpack5ベースのビルダー (Next.js 16との互換性のため)
+- `@storybook/react-webpack5` - Webpack5ベースのビルダー
+- `@storybook/react-vite` - Viteベースのビルダー（高速開発）
 - `@storybook/test-runner` - Playwrightベースのテストランナー
 - `@storybook/addon-interactions` - インタラクションテスト用アドオン
 - `@storybook/addon-essentials` - 必須アドオンのコレクション
 - `@storybook/test` - テストユーティリティ
 - `playwright` / `@playwright/test` - ブラウザ自動化とテスト
 - `babel-loader`, `@babel/preset-typescript`, `@babel/preset-react` - TypeScript/React変換
+- `wait-on` - サーバー起動待機ユーティリティ
 
 ## 設定ファイル
 
-### .storybook/main.ts
+### Webpack5版 (.storybook/)
+
+#### .storybook/main.ts
 
 - `app/**/*.stories.@(js|jsx|ts|tsx)` パターンでストーリーファイルを検索
 - Webpack5とTypeScriptサポートを有効化
 - 自動JSXランタイムを使用してReactインポートを不要に
 - パスエイリアス `@/` をサポート
 
-### .storybook/preview.ts
+#### .storybook/preview.ts
 
 - Tailwind CSSのグローバルスタイルを読み込み
 - カラーとデータマッチャーの設定
 
-### .storybook/test-runner.ts
+#### .storybook/test-runner.ts
 
 - `preVisit`: 各ストーリーテスト開始時にログ出力 🧪
 - `postVisit`: 各ストーリーテスト完了時にログ出力 ✅
 - タイマーのクリーンアップ処理でタイムアウト問題をデバッグ
+
+### Vite版 (.storybook-vite/)
+
+#### .storybook-vite/main.ts
+
+- `@storybook/react-vite` フレームワークを使用
+- 高速なHMR（Hot Module Replacement）
+- Vite固有の設定が可能
+
+#### .storybook-vite/preview.ts
+
+- Webpack5版と同じグローバル設定
+
+#### .storybook-vite/test-runner.ts
+
+- Webpack5版と同じデバッグ機能
+- ログに `[Vite]` プレフィックスを付けて識別
 
 ## テストコンポーネント
 
@@ -58,7 +83,9 @@
 
 ## 使用方法
 
-### 1. Storybookの起動
+### Webpack5版の使用
+
+#### 1. Storybookの起動
 
 ```bash
 npm run storybook
@@ -66,7 +93,7 @@ npm run storybook
 
 ブラウザで http://localhost:6006 を開くとStorybookが表示されます。
 
-### 2. Storybookのビルド
+#### 2. Storybookのビルド
 
 ```bash
 npm run build-storybook
@@ -74,7 +101,7 @@ npm run build-storybook
 
 静的ファイルが `storybook-static/` ディレクトリに生成されます。
 
-### 3. テストの実行
+#### 3. テストの実行
 
 ```bash
 npm run test-storybook
@@ -82,7 +109,7 @@ npm run test-storybook
 
 すべてのストーリーがテストされます。コンソール出力で各ストーリーのテスト開始/完了を確認できます。
 
-### 4. ウォッチモードでテスト
+#### 4. ウォッチモードでテスト
 
 ```bash
 npm run test-storybook:watch
@@ -90,7 +117,7 @@ npm run test-storybook:watch
 
 ファイルの変更を監視し、自動的にテストを再実行します。
 
-### 5. デバッグモードでテスト
+#### 5. デバッグモードでテスト
 
 ```bash
 npm run test-storybook:debug
@@ -98,7 +125,46 @@ npm run test-storybook:debug
 
 詳細なデバッグ情報を出力しながらテストを実行します。
 
-### 6. 特定のストーリーのみテスト
+### Vite版の使用
+
+#### 1. Storybookの起動
+
+```bash
+npm run storybook:vite
+```
+
+ブラウザで http://localhost:6007 を開くとStorybookが表示されます。
+
+#### 2. Storybookのビルド
+
+```bash
+npm run build-storybook:vite
+```
+
+静的ファイルが `storybook-static-vite/` ディレクトリに生成されます。
+
+#### 3. テストの実行
+
+```bash
+# まず別のターミナルでStorybookを起動
+npm run storybook:vite
+
+# テストを実行
+npm run test-storybook:vite
+```
+
+### CI/CD
+
+GitHub Actionsワークフロー (`.github/workflows/storybook-ci.yml`) が設定されており、以下を自動実行します:
+
+1. ESLint によるコード品質チェック
+2. Next.js ビルド
+3. Storybook ビルド
+4. Storybook テスト実行
+
+プルリクエストまたはmain/developブランチへのプッシュ時に自動実行されます。
+
+### 特定のストーリーのみテスト
 
 ```bash
 npm run test-storybook -- --stories-glob="**/TestComponent.stories.tsx"
