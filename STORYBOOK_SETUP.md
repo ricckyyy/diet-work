@@ -6,9 +6,10 @@
 
 このプロジェクトでは、「2つ目のStorybookテストでタイムアウトする」問題を再現し、デバッグするための環境を構築しました。
 
-**2つのビルダー構成を提供:**
+**3つのビルダー構成を提供:**
 - **Webpack5版** (`.storybook/`) - 安定版、広くサポートされている
 - **Vite版** (`.storybook-vite/`) - 高速な開発体験、React専用構成
+- **Next.js+Vite版** (`.storybook-nextjs-vite/`) - Next.js統合のVite版、最高の開発体験
 
 ## インストール済みのパッケージ
 
@@ -17,6 +18,9 @@
 - `@storybook/react` - React用Storybookコア
 - `@storybook/react-webpack5` - Webpack5ベースのビルダー
 - `@storybook/react-vite` - Viteベースのビルダー（高速開発）
+- `@storybook/nextjs` - Next.js統合（Vite対応）
+- `@mui/material` - Material-UI コンポーネントライブラリ
+- `@mui/icons-material` - Material-UI アイコン
 - `@storybook/test-runner` - Playwrightベースのテストランナー
 - `@storybook/addon-interactions` - インタラクションテスト用アドオン
 - `@storybook/addon-essentials` - 必須アドオンのコレクション
@@ -64,6 +68,24 @@
 - Webpack5版と同じデバッグ機能
 - ログに `[Vite]` プレフィックスを付けて識別
 
+### Next.js+Vite版 (.storybook-nextjs-vite/)
+
+#### .storybook-nextjs-vite/main.ts
+
+- `@storybook/nextjs` フレームワークをViteビルダーで使用
+- Next.js固有の機能をサポート（App Router等）
+- 高速なHMRと最適化されたビルド
+
+#### .storybook-nextjs-vite/preview.ts
+
+- Next.js用の設定を含む
+- App Directoryサポート
+
+#### .storybook-nextjs-vite/test-runner.ts
+
+- Webpack5版と同じデバッグ機能
+- ログに `[Next.js+Vite]` プレフィックスを付けて識別
+
 ## テストコンポーネント
 
 ### TestComponent
@@ -76,7 +98,7 @@
 
 ### SubComponent
 
-- `app/components/TestComponent/SubComponent/index.tsx` - サブコンポーネント
+- `app/components/TestComponent/SubComponent/index.tsx` - サブコンポーネント（Material-UIアイコン付き）
 - `app/components/TestComponent/SubComponent/SubComponent.stories.tsx` - 2つのストーリー:
   - Default - デフォルトコンテンツ
   - LongContent - 長いコンテンツ
@@ -151,6 +173,34 @@ npm run storybook:vite
 
 # テストを実行
 npm run test-storybook:vite
+```
+
+### Next.js+Vite版の使用
+
+#### 1. Storybookの起動
+
+```bash
+npm run storybook:nextjs-vite
+```
+
+ブラウザで http://localhost:6008 を開くとStorybookが表示されます。
+
+#### 2. Storybookのビルド
+
+```bash
+npm run build-storybook:nextjs-vite
+```
+
+静的ファイルが `storybook-static-nextjs-vite/` ディレクトリに生成されます。
+
+#### 3. テストの実行
+
+```bash
+# まず別のターミナルでStorybookを起動
+npm run storybook:nextjs-vite
+
+# テストを実行
+npm run test-storybook:nextjs-vite
 ```
 
 ### CI/CD

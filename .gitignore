@@ -47,3 +47,4 @@ prisma/dev.db-journal
 # Storybook
 storybook-static/
 storybook-static-vite/
+storybook-static-nextjs-vite/

@@ -16,10 +16,15 @@
     "test-storybook:debug": "test-storybook --debug",
     "storybook:vite": "storybook dev -p 6007 -c .storybook-vite",
     "build-storybook:vite": "storybook build -c .storybook-vite -o storybook-static-vite",
-    "test-storybook:vite": "test-storybook --url http://localhost:6007 --config-dir .storybook-vite"
+    "test-storybook:vite": "test-storybook --url http://localhost:6007 --config-dir .storybook-vite",
+    "storybook:nextjs-vite": "storybook dev -p 6008 -c .storybook-nextjs-vite",
+    "build-storybook:nextjs-vite": "storybook build -c .storybook-nextjs-vite -o storybook-static-nextjs-vite",
+    "test-storybook:nextjs-vite": "test-storybook --url http://localhost:6008 --config-dir .storybook-nextjs-vite"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
+    "@mui/icons-material": "^6.4.0",
+    "@mui/material": "^6.4.0",
     "@prisma/client": "^5.0.0",
     "ajv": "^8.17.1",
     "next": "16.1.1",
