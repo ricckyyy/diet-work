@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma migrate deploy --skip-seed || prisma db push --skip-generate --accept-data-loss && prisma generate && next build"
+    "vercel-build": "prisma migrate deploy --skip-seed || prisma db push --skip-generate --accept-data-loss && prisma generate && next build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test-storybook": "test-storybook",
+    "test-storybook:watch": "test-storybook --watch",
+    "test-storybook:debug": "test-storybook --debug"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -21,12 +26,21 @@
     "recharts": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@storybook/addon-essentials": "^8.5.3",
+    "@storybook/addon-interactions": "^8.5.3",
+    "@storybook/nextjs": "^8.5.3",
+    "@storybook/react": "^8.5.3",
+    "@storybook/test": "^8.5.3",
+    "@storybook/test-runner": "^0.21.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "playwright": "^1.49.1",
+    "storybook": "^8.5.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

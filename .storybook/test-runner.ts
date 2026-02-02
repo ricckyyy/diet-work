@@ -1,0 +1,22 @@
+import type { TestRunnerConfig } from '@storybook/test-runner';
+
+const config: TestRunnerConfig = {
+  async postVisit(page, context) {
+    // クリーンアップ処理を追加してタイムアウト問題をデバッグ
+    await page.evaluate(() => {
+      // タイマーのクリア
+      const highestId = window.setTimeout(() => {
+        for (let i = highestId; i >= 0; i--) {
+          window.clearTimeout(i);
+        }
+      }, 0);
+    });
+    
+    console.log(`✅ Story tested: ${context.title}`);
+  },
+  async preVisit(page, context) {
+    console.log(`🧪 Testing story: ${context.title}`);
+  },
+};
+
+export default config;
