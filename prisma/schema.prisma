@@ -20,6 +20,7 @@ model User {
   sessions      Session[]
   weights       Weight[]
   sideJobLogs   SideJobLog[]
+  healthRecords HealthRecord[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -83,6 +84,32 @@ model SideJobLog {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+model HealthRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  
+  // 数値データ（すべてOptional = 項目追加が容易）
+  weight      Float?
+  bodyTemp    Float?
+  sleepHours  Float?
+  waterIntake Float?
+  steps       Int?
+  
+  // テキストデータ
+  meals       String?  @db.Text
+  activities  String?  @db.Text
+  notes       String?  @db.Text
+  rawInput    String   @db.Text  // 元の入力をそのまま保存
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
   @@unique([userId, date])
   @@index([userId])
 }
