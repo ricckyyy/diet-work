@@ -5,14 +5,18 @@ import { getUserIdByEmail } from "@/lib/auth-helper-db";
 
 // 数値パース用ヘルパー関数
 const parseOptionalFloat = (value: unknown): number | undefined => {
-	if (value === undefined) return undefined;
-	const parsed = parseFloat(value as string);
+	if (value === undefined || value === null) return undefined;
+	if (typeof value === 'number') return !isNaN(value) ? value : undefined;
+	if (typeof value !== 'string') return undefined;
+	const parsed = parseFloat(value);
 	return !isNaN(parsed) ? parsed : undefined;
 };
 
 const parseOptionalInt = (value: unknown): number | undefined => {
-	if (value === undefined) return undefined;
-	const parsed = parseInt(value as string);
+	if (value === undefined || value === null) return undefined;
+	if (typeof value === 'number') return !isNaN(value) ? Math.floor(value) : undefined;
+	if (typeof value !== 'string') return undefined;
+	const parsed = parseInt(value);
 	return !isNaN(parsed) ? parsed : undefined;
 };
 
