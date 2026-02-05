@@ -20,6 +20,12 @@ const parseOptionalInt = (value: unknown): number | undefined => {
 	return !isNaN(parsed) ? parsed : undefined;
 };
 
+const parseOptionalString = (value: unknown): string | undefined => {
+	if (value === undefined || value === null) return undefined;
+	if (typeof value !== 'string') return undefined;
+	return value;
+};
+
 export async function POST(request: NextRequest) {
 	try {
 		const session = await auth();
@@ -64,9 +70,9 @@ export async function POST(request: NextRequest) {
 			sleepHours: parseOptionalFloat(sleepHours),
 			waterIntake: parseOptionalFloat(waterIntake),
 			steps: parseOptionalInt(steps),
-			meals,
-			activities,
-			notes,
+			meals: parseOptionalString(meals),
+			activities: parseOptionalString(activities),
+			notes: parseOptionalString(notes),
 		};
 
 		// upsert: 存在すれば更新、なければ作成
@@ -107,8 +113,12 @@ export async function GET(request: NextRequest) {
 		const userId = await getUserIdByEmail(session.user.email);
 
 		const { searchParams } = new URL(request.url);
-		const limit = parseInt(searchParams.get("limit") || "30");
-		const offset = parseInt(searchParams.get("offset") || "0");
+		const limitParam = parseInt(searchParams.get("limit") || "30");
+		const offsetParam = parseInt(searchParams.get("offset") || "0");
+
+		// パラメータのバリデーション
+		const limit = Math.min(Math.max(limitParam, 1), 100); // 1〜100の範囲
+		const offset = Math.max(offsetParam, 0); // 0以上
 
 		const healthRecords = await prisma.healthRecord.findMany({
 			where: { userId },
