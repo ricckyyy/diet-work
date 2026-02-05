@@ -3,6 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getUserIdByEmail } from "@/lib/auth-helper-db";
 
+// 数値パース用ヘルパー関数
+const parseOptionalFloat = (value: unknown): number | undefined => {
+	if (value === undefined) return undefined;
+	const parsed = parseFloat(value as string);
+	return !isNaN(parsed) ? parsed : undefined;
+};
+
+const parseOptionalInt = (value: unknown): number | undefined => {
+	if (value === undefined) return undefined;
+	const parsed = parseInt(value as string);
+	return !isNaN(parsed) ? parsed : undefined;
+};
+
 export async function POST(request: NextRequest) {
 	try {
 		const session = await auth();
@@ -42,26 +55,11 @@ export async function POST(request: NextRequest) {
 		// データをパースして共通のオブジェクトを作成
 		const recordData = {
 			rawInput,
-			weight: weight !== undefined ? (() => {
-				const parsed = parseFloat(weight);
-				return !isNaN(parsed) ? parsed : undefined;
-			})() : undefined,
-			bodyTemp: bodyTemp !== undefined ? (() => {
-				const parsed = parseFloat(bodyTemp);
-				return !isNaN(parsed) ? parsed : undefined;
-			})() : undefined,
-			sleepHours: sleepHours !== undefined ? (() => {
-				const parsed = parseFloat(sleepHours);
-				return !isNaN(parsed) ? parsed : undefined;
-			})() : undefined,
-			waterIntake: waterIntake !== undefined ? (() => {
-				const parsed = parseFloat(waterIntake);
-				return !isNaN(parsed) ? parsed : undefined;
-			})() : undefined,
-			steps: steps !== undefined ? (() => {
-				const parsed = parseInt(steps);
-				return !isNaN(parsed) ? parsed : undefined;
-			})() : undefined,
+			weight: parseOptionalFloat(weight),
+			bodyTemp: parseOptionalFloat(bodyTemp),
+			sleepHours: parseOptionalFloat(sleepHours),
+			waterIntake: parseOptionalFloat(waterIntake),
+			steps: parseOptionalInt(steps),
 			meals,
 			activities,
 			notes,

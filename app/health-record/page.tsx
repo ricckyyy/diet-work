@@ -7,6 +7,7 @@ export default function HealthRecordPage() {
   const [rawInput, setRawInput] = useState('')
   const [records, setRecords] = useState<HealthRecordResponse[]>([])
   const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success')
   const [loading, setLoading] = useState(false)
   const [fetchError, setFetchError] = useState('')
 
@@ -35,6 +36,7 @@ export default function HealthRecordPage() {
     
     if (!rawInput.trim()) {
       setMessage('入力内容を記入してください')
+      setMessageType('error')
       return
     }
 
@@ -53,6 +55,7 @@ export default function HealthRecordPage() {
 
       if (res.ok) {
         setMessage('健康記録を保存しました')
+        setMessageType('success')
         setRawInput('')
         // データを再取得
         await fetchRecords()
@@ -60,10 +63,12 @@ export default function HealthRecordPage() {
         const errorData = await res.json().catch(() => null)
         const errorMessage = errorData?.error || '保存に失敗しました'
         setMessage(errorMessage)
+        setMessageType('error')
       }
     } catch (error) {
       console.error('Error:', error)
       setMessage('ネットワークエラーが発生しました')
+      setMessageType('error')
     } finally {
       setLoading(false)
     }
@@ -118,7 +123,7 @@ export default function HealthRecordPage() {
 
           {message && (
             <div className={`mt-4 p-3 rounded-md ${
-              message.includes('失敗') || message.includes('エラー')
+              messageType === 'error'
                 ? 'bg-red-50 text-red-700'
                 : 'bg-green-50 text-green-700'
             }`}>
