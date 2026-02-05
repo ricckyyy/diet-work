@@ -1,27 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-interface HealthRecord {
-  id: string
-  userId: string
-  date: string
-  weight?: number
-  bodyTemp?: number
-  sleepHours?: number
-  waterIntake?: number
-  steps?: number
-  meals?: string
-  activities?: string
-  notes?: string
-  rawInput: string
-  createdAt: string
-  updatedAt: string
-}
+import { HealthRecordResponse } from '@/types/health-record'
 
 export default function HealthRecordPage() {
   const [rawInput, setRawInput] = useState('')
-  const [records, setRecords] = useState<HealthRecord[]>([])
+  const [records, setRecords] = useState<HealthRecordResponse[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
