@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
-import { getUserIdByEmail } from "@/lib/auth-helper-db";
+import { getAuthUserId } from "@/lib/auth-helper";
 
 export async function GET() {
 	try {
-		const session = await auth();
-
-		if (!session?.user?.email) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		// emailからuserIdを取得
-		const userId = await getUserIdByEmail(session.user.email);
+		const userId = await getAuthUserId();
 
 		const latestRecord = await prisma.healthRecord.findFirst({
 			where: { userId },

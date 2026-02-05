@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
-import { getUserIdByEmail } from "@/lib/auth-helper-db";
+import { getAuthUserId } from "@/lib/auth-helper";
 
 // 数値パース用ヘルパー関数
 const parseOptionalFloat = (value: unknown): number | undefined => {
@@ -28,14 +27,7 @@ const parseOptionalString = (value: unknown): string | undefined => {
 
 export async function POST(request: NextRequest) {
 	try {
-		const session = await auth();
-
-		if (!session?.user?.email) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		// emailからuserIdを取得
-		const userId = await getUserIdByEmail(session.user.email);
+		const userId = await getAuthUserId();
 
 		const body = await request.json();
 		const {
@@ -103,14 +95,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
 	try {
-		const session = await auth();
-
-		if (!session?.user?.email) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		// emailからuserIdを取得
-		const userId = await getUserIdByEmail(session.user.email);
+		const userId = await getAuthUserId();
 
 		const { searchParams } = new URL(request.url);
 		const limitParam = parseInt(searchParams.get("limit") || "30");
