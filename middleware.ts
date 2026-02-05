@@ -1,6 +1,7 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { shouldSkipAuth } from "@/lib/constants"
 
 export async function middleware(request: NextRequest) {
   try {
@@ -14,9 +15,9 @@ export async function middleware(request: NextRequest) {
       }
     })
 
-    // 開発環境では認証スキップ
-    if (process.env.NODE_ENV === "development") {
-      console.log("[Middleware] Development mode - skipping authentication")
+    // 開発環境またはプレビュー環境では認証スキップ
+    if (shouldSkipAuth()) {
+      console.log("[Middleware] Auth skip mode - skipping authentication")
       return NextResponse.next()
     }
 

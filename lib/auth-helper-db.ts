@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { DEV_USER_ID } from "./constants";
+import { DEV_USER_ID, shouldSkipAuth } from "./constants";
 
 /**
  * メールアドレスからユーザーIDを取得または作成する
  * サーバーサイドのみで使用可能
  * 
- * 開発環境ではダミーユーザーIDを返す
+ * 開発環境またはプレビュー環境ではダミーユーザーIDを返す
  * OAuth認証されたユーザーのみがこの関数を呼び出すため、
  * ユーザーが存在しない場合は自動的に作成します。
  * 
@@ -14,8 +14,8 @@ import { DEV_USER_ID } from "./constants";
  * @throws {Error} emailが無効な場合
  */
 export async function getUserIdByEmail(email: string): Promise<string> {
-	// 開発環境ではダミーユーザーIDを返す
-	if (process.env.NODE_ENV === "development") {
+	// 開発環境またはプレビュー環境ではダミーユーザーIDを返す
+	if (shouldSkipAuth()) {
 		return DEV_USER_ID
 	}
 

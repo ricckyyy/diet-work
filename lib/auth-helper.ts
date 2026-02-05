@@ -1,14 +1,14 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
-import { DEV_USER_ID } from "./constants"
+import { DEV_USER_ID, shouldSkipAuth } from "./constants"
 
 /**
  * 認証ユーザーを取得
- * 開発環境ではダミーユーザーを返し、本番環境では実際の認証セッションから取得
+ * 開発環境またはプレビュー環境ではダミーユーザーを返し、本番環境では実際の認証セッションから取得
  */
 export async function getAuthUser() {
-  // 開発環境ではダミーユーザーを返す
-  if (process.env.NODE_ENV === "development") {
+  // 開発環境またはプレビュー環境ではダミーユーザーを返す
+  if (shouldSkipAuth()) {
     return {
       id: DEV_USER_ID,
       email: "dev@example.com",
@@ -33,7 +33,7 @@ export async function getAuthUser() {
 
 /**
  * 認証ユーザーIDを取得
- * 開発環境ではダミーユーザーID、本番環境では実際のユーザーID
+ * 開発環境またはプレビュー環境ではダミーユーザーID、本番環境では実際のユーザーID
  */
 export async function getAuthUserId(): Promise<string> {
   const user = await getAuthUser()
