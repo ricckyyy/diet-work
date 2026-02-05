@@ -8,6 +8,7 @@ export default function HealthRecordPage() {
   const [records, setRecords] = useState<HealthRecordResponse[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [fetchError, setFetchError] = useState('')
 
   useEffect(() => {
     fetchRecords()
@@ -19,9 +20,13 @@ export default function HealthRecordPage() {
       if (res.ok) {
         const data = await res.json()
         setRecords(data)
+        setFetchError('')
+      } else {
+        setFetchError('記録の取得に失敗しました')
       }
     } catch (error) {
       console.error('Failed to fetch health records:', error)
+      setFetchError('ネットワークエラーが発生しました')
     }
   }
 
@@ -52,11 +57,13 @@ export default function HealthRecordPage() {
         // データを再取得
         await fetchRecords()
       } else {
-        setMessage('保存に失敗しました')
+        const errorData = await res.json().catch(() => null)
+        const errorMessage = errorData?.error || '保存に失敗しました'
+        setMessage(errorMessage)
       }
     } catch (error) {
       console.error('Error:', error)
-      setMessage('エラーが発生しました')
+      setMessage('ネットワークエラーが発生しました')
     } finally {
       setLoading(false)
     }
@@ -125,6 +132,12 @@ export default function HealthRecordPage() {
           <h2 className="text-xl font-bold text-gray-800">
             過去の記録
           </h2>
+
+          {fetchError && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-md">
+              {fetchError}
+            </div>
+          )}
 
           {records.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">

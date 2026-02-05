@@ -42,11 +42,26 @@ export async function POST(request: NextRequest) {
 		// データをパースして共通のオブジェクトを作成
 		const recordData = {
 			rawInput,
-			weight: weight !== undefined ? parseFloat(weight) : undefined,
-			bodyTemp: bodyTemp !== undefined ? parseFloat(bodyTemp) : undefined,
-			sleepHours: sleepHours !== undefined ? parseFloat(sleepHours) : undefined,
-			waterIntake: waterIntake !== undefined ? parseFloat(waterIntake) : undefined,
-			steps: steps !== undefined ? parseInt(steps) : undefined,
+			weight: weight !== undefined ? (() => {
+				const parsed = parseFloat(weight);
+				return !isNaN(parsed) ? parsed : undefined;
+			})() : undefined,
+			bodyTemp: bodyTemp !== undefined ? (() => {
+				const parsed = parseFloat(bodyTemp);
+				return !isNaN(parsed) ? parsed : undefined;
+			})() : undefined,
+			sleepHours: sleepHours !== undefined ? (() => {
+				const parsed = parseFloat(sleepHours);
+				return !isNaN(parsed) ? parsed : undefined;
+			})() : undefined,
+			waterIntake: waterIntake !== undefined ? (() => {
+				const parsed = parseFloat(waterIntake);
+				return !isNaN(parsed) ? parsed : undefined;
+			})() : undefined,
+			steps: steps !== undefined ? (() => {
+				const parsed = parseInt(steps);
+				return !isNaN(parsed) ? parsed : undefined;
+			})() : undefined,
 			meals,
 			activities,
 			notes,
