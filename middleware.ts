@@ -14,6 +14,12 @@ export async function middleware(request: NextRequest) {
       }
     })
 
+    // 開発環境では認証スキップ
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Middleware] Development mode - skipping authentication")
+      return NextResponse.next()
+    }
+
     const session = await auth()
     
     console.log("[Middleware] Session:", {

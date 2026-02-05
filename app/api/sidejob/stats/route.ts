@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
-import { getUserIdByEmail } from "@/lib/auth-helper-db";
+import { getAuthUserId } from "@/lib/auth-helper";
 
 export async function GET() {
 	try {
-		const session = await auth();
-
-		if (!session?.user?.email) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		const userId = await getUserIdByEmail(session.user.email);
+		const userId = await getAuthUserId();
 
 		const now = new Date();
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -70,6 +63,9 @@ export async function GET() {
 		});
 	} catch (error) {
 		console.error("Error fetching side job stats:", error);
+		if (error instanceof Error && error.message === "Unauthorized") {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
 		return NextResponse.json(
 			{ error: "Failed to fetch side job stats" },
 			{ status: 500 }
