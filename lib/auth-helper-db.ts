@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { DEV_USER_ID } from "./constants";
 
 /**
  * メールアドレスからユーザーIDを取得または作成する
@@ -15,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 export async function getUserIdByEmail(email: string): Promise<string> {
 	// 開発環境ではダミーユーザーIDを返す
 	if (process.env.NODE_ENV === "development") {
-		return "dev-user-123"
+		return DEV_USER_ID
 	}
 
 	// メールアドレスのバリデーション

@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
+import { DEV_USER_ID } from "./constants"
 
 /**
  * 認証ユーザーを取得
@@ -9,7 +10,7 @@ export async function getAuthUser() {
   // 開発環境ではダミーユーザーを返す
   if (process.env.NODE_ENV === "development") {
     return {
-      id: "dev-user-123",
+      id: DEV_USER_ID,
       email: "dev@example.com",
       name: "開発ユーザー",
       image: null,
