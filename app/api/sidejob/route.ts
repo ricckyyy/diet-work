@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
-import { getUserIdByEmail } from "@/lib/auth-helper-db";
+import { getAuthUserId } from "@/lib/auth-helper";
 
 export async function POST(request: NextRequest) {
 	try {
-		const session = await auth();
-
-		if (!session?.user?.email) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		const userId = await getUserIdByEmail(session.user.email);
+		const userId = await getAuthUserId();
 
 		const { date, minutes, memo } = await request.json();
 
@@ -74,6 +67,9 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(sideJobLog);
 	} catch (error) {
 		console.error("Error saving side job log:", error);
+		if (error instanceof Error && error.message === "Unauthorized") {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
 		return NextResponse.json(
 			{ error: "Failed to save side job log" },
 			{ status: 500 }
