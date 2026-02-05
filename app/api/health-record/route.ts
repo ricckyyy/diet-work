@@ -39,6 +39,19 @@ export async function POST(request: NextRequest) {
 		const normalizedDate = new Date(date);
 		normalizedDate.setHours(0, 0, 0, 0);
 
+		// データをパースして共通のオブジェクトを作成
+		const recordData = {
+			rawInput,
+			weight: weight !== undefined ? parseFloat(weight) : undefined,
+			bodyTemp: bodyTemp !== undefined ? parseFloat(bodyTemp) : undefined,
+			sleepHours: sleepHours !== undefined ? parseFloat(sleepHours) : undefined,
+			waterIntake: waterIntake !== undefined ? parseFloat(waterIntake) : undefined,
+			steps: steps !== undefined ? parseInt(steps) : undefined,
+			meals,
+			activities,
+			notes,
+		};
+
 		// upsert: 存在すれば更新、なければ作成
 		const healthRecord = await prisma.healthRecord.upsert({
 			where: {
@@ -47,29 +60,11 @@ export async function POST(request: NextRequest) {
 					date: normalizedDate,
 				},
 			},
-			update: {
-				rawInput,
-				weight: weight !== undefined ? parseFloat(weight) : undefined,
-				bodyTemp: bodyTemp !== undefined ? parseFloat(bodyTemp) : undefined,
-				sleepHours: sleepHours !== undefined ? parseFloat(sleepHours) : undefined,
-				waterIntake: waterIntake !== undefined ? parseFloat(waterIntake) : undefined,
-				steps: steps !== undefined ? parseInt(steps) : undefined,
-				meals,
-				activities,
-				notes,
-			},
+			update: recordData,
 			create: {
 				userId,
 				date: normalizedDate,
-				rawInput,
-				weight: weight !== undefined ? parseFloat(weight) : undefined,
-				bodyTemp: bodyTemp !== undefined ? parseFloat(bodyTemp) : undefined,
-				sleepHours: sleepHours !== undefined ? parseFloat(sleepHours) : undefined,
-				waterIntake: waterIntake !== undefined ? parseFloat(waterIntake) : undefined,
-				steps: steps !== undefined ? parseInt(steps) : undefined,
-				meals,
-				activities,
-				notes,
+				...recordData,
 			},
 		});
 
