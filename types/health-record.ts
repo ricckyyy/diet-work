@@ -2,14 +2,14 @@ export type HealthRecord = {
   id: string
   userId: string
   date: Date
-  weight?: number
-  bodyTemp?: number
-  sleepHours?: number
-  waterIntake?: number
-  steps?: number
-  meals?: string
-  activities?: string
-  notes?: string
+  weight: number | null
+  bodyTemp: number | null
+  sleepHours: number | null
+  waterIntake: number | null
+  steps: number | null
+  meals: string | null
+  activities: string | null
+  notes: string | null
   rawInput: string
   createdAt: Date
   updatedAt: Date
@@ -20,14 +20,14 @@ export type HealthRecordResponse = {
   id: string
   userId: string
   date: string
-  weight?: number
-  bodyTemp?: number
-  sleepHours?: number
-  waterIntake?: number
-  steps?: number
-  meals?: string
-  activities?: string
-  notes?: string
+  weight: number | null
+  bodyTemp: number | null
+  sleepHours: number | null
+  waterIntake: number | null
+  steps: number | null
+  meals: string | null
+  activities: string | null
+  notes: string | null
   rawInput: string
   createdAt: string
   updatedAt: string

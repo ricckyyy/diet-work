@@ -12,12 +12,18 @@ export async function GET() {
 		});
 
 		if (!latestRecord) {
-			return NextResponse.json(null);
+			return NextResponse.json(
+				{ error: "No health record data found" },
+				{ status: 404 }
+			);
 		}
 
 		return NextResponse.json(latestRecord);
 	} catch (error) {
 		console.error("Error fetching latest health record:", error);
+		if (error instanceof Error && error.message === "Unauthorized") {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
 		return NextResponse.json(
 			{ error: "Failed to fetch latest health record" },
 			{ status: 500 }

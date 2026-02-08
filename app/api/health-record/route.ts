@@ -50,9 +50,16 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// 日付を00:00:00に正規化
+		if (typeof rawInput === 'string' && rawInput.length > 5000) {
+			return NextResponse.json(
+				{ error: "rawInput must be 5000 characters or less" },
+				{ status: 400 }
+			);
+		}
+
+		// 日付をUTC 00:00:00に正規化
 		const normalizedDate = new Date(date);
-		normalizedDate.setHours(0, 0, 0, 0);
+		normalizedDate.setUTCHours(0, 0, 0, 0);
 
 		// データをパースして共通のオブジェクトを作成
 		const recordData = {
@@ -86,6 +93,9 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(healthRecord);
 	} catch (error) {
 		console.error("Error saving health record:", error);
+		if (error instanceof Error && error.message === "Unauthorized") {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
 		return NextResponse.json(
 			{ error: "Failed to save health record" },
 			{ status: 500 }
@@ -98,8 +108,8 @@ export async function GET(request: NextRequest) {
 		const userId = await getAuthUserId();
 
 		const { searchParams } = new URL(request.url);
-		const limitParam = parseInt(searchParams.get("limit") || "30");
-		const offsetParam = parseInt(searchParams.get("offset") || "0");
+		const limitParam = parseInt(searchParams.get("limit") || "30") || 30;
+		const offsetParam = parseInt(searchParams.get("offset") || "0") || 0;
 
 		// パラメータのバリデーション
 		const limit = Math.min(Math.max(limitParam, 1), 100); // 1〜100の範囲
@@ -115,6 +125,9 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json(healthRecords);
 	} catch (error) {
 		console.error("Error fetching health records:", error);
+		if (error instanceof Error && error.message === "Unauthorized") {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
 		return NextResponse.json(
 			{ error: "Failed to fetch health records" },
 			{ status: 500 }
