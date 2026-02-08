@@ -20,6 +20,7 @@ model User {
   sessions      Session[]
   weights       Weight[]
   sideJobLogs   SideJobLog[]
+  healthRecords HealthRecord[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -82,6 +83,30 @@ model SideJobLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+model HealthRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+
+  weight      Float?
+  bodyTemp    Float?
+  sleepHours  Float?
+  waterIntake Float?
+  steps       Int?
+
+  meals       String?  @db.Text
+  activities  String?  @db.Text
+  notes       String?  @db.Text
+  rawInput    String   @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId])

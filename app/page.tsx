@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import WeightAndSideJobChart from './components/WeightAndSideJobChart'
 
 interface WeightData {
@@ -482,6 +483,24 @@ export default function Home() {
           </div>
         )}
           </div>
+        </div>
+
+        {/* Health Record Link */}
+        <div className="lg:col-span-3">
+          <Link
+            href="/health-record"
+            className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">健康記録</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  日々の健康データを記録・グラフで確認
+                </p>
+              </div>
+              <span className="text-gray-400 text-2xl">&rarr;</span>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
