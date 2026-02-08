@@ -1,0 +1,55 @@
+name: Storybook CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  storybook-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: コードのチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 依存関係のインストール
+        run: npm install --legacy-peer-deps
+
+      - name: Playwrightブラウザのインストール
+        run: npx playwright install chromium --with-deps
+
+      - name: ESLintの実行
+        run: npm run lint
+
+      - name: Next.jsのビルド
+        run: npm run build
+
+      - name: Storybookのビルド
+        run: npm run build-storybook
+
+      - name: Storybookサーバーの起動
+        run: npm run storybook &
+        env:
+          CI: true
+
+      - name: Storybookの起動待機
+        run: npx wait-on http://localhost:6006 --timeout 60000
+
+      - name: Storybookテストの実行
+        run: npm run test-storybook
+
+      - name: Storybookビルドのアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: storybook-static/
+          retention-days: 7

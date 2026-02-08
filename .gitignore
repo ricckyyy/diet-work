@@ -43,3 +43,8 @@ next-env.d.ts
 # prisma
 prisma/dev.db
 prisma/dev.db-journal
+
+# Storybook
+storybook-static/
+storybook-static-vite/
+storybook-static-nextjs-vite/
