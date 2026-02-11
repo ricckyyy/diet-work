@@ -6,19 +6,19 @@ export async function GET() {
 	try {
 		const userId = await getAuthUserId();
 
-		const latestRecord = await prisma.healthRecord.findFirst({
+		const record = await prisma.healthRecord.findFirst({
 			where: { userId },
 			orderBy: { date: "desc" },
 		});
 
-		if (!latestRecord) {
+		if (!record) {
 			return NextResponse.json(
-				{ error: "No health record data found" },
+				{ error: "No health record found" },
 				{ status: 404 }
 			);
 		}
 
-		return NextResponse.json(latestRecord);
+		return NextResponse.json(record);
 	} catch (error) {
 		console.error("Error fetching latest health record:", error);
 		if (error instanceof Error && error.message === "Unauthorized") {
