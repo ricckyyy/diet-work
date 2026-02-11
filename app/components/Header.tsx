@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/auth"
 import Image from "next/image"
+import Link from "next/link"
 
 export default async function Header() {
   const session = await auth()
@@ -9,9 +10,26 @@ export default async function Header() {
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <h1 className="text-lg font-bold text-gray-800">
-          ダイエット × 副業 連動アプリ
-        </h1>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="text-lg font-bold text-gray-800 hover:text-blue-600 transition-colors">
+            ダイエット × 副業 連動アプリ
+          </Link>
+          
+          <nav className="flex gap-4">
+            <Link 
+              href="/" 
+              className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              ホーム
+            </Link>
+            <Link 
+              href="/health-record" 
+              className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              健康記録
+            </Link>
+          </nav>
+        </div>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
