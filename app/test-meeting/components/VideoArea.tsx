@@ -24,11 +24,11 @@ export default function VideoArea({
         zIndex: 1000,
       }}
     >
-      {/* ── 相手の映像（スマホ:全幅、PC:9列） ── */}
+      {/* ── 相手の映像（スマホ縦:12、スマホ横:6、PC:9） ── */}
       <Grid2
-        size={cameraOn ? { xs: 12, sm: 9 } : 12}
+        size={cameraOn ? { xs: 12, sm: 6, md: 9 } : 12}
         sx={{
-          height: { xs: cameraOn ? '70vh' : '100vh', sm: '100%' },
+          height: { xs: cameraOn ? '50vh' : '100vh', sm: '100%' },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -46,12 +46,12 @@ export default function VideoArea({
         </Typography>
       </Grid2>
 
-      {/* ── 自分の映像（スマホ:全幅・下、PC:3列・右上）カメラON時 ── */}
+      {/* ── 自分の映像（スマホ縦:12、スマホ横:6、PC:3）カメラON時 ── */}
       {cameraOn && (
         <Grid2
-          size={{ xs: 12, sm: 3 }}
+          size={{ xs: 12, sm: 6, md: 3 }}
           sx={{
-            height: { xs: '30vh', sm: '100%' },
+            height: { xs: '50vh', sm: '100%' },
             display: 'flex',
             flexDirection: 'column',
             backgroundColor: 'grey.900',
