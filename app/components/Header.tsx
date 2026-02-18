@@ -29,6 +29,18 @@ export default async function Header() {
             >
               健康記録
             </Link>
+            <Link
+              href="/test-meeting"
+              className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              会議室
+            </Link>
+            <Link
+              href="/test-meeting-resize"
+              className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              会議室(リサイズ)
+            </Link>
           </nav>
         </div>
 
@@ -46,6 +58,18 @@ export default async function Header() {
               className="text-xs text-gray-600 hover:text-blue-600 transition-colors"
             >
               健康記録
+            </Link>
+            <Link
+              href="/test-meeting"
+              className="text-xs text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              会議室
+            </Link>
+            <Link
+              href="/test-meeting-resize"
+              className="text-xs text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              リサイズ版
             </Link>
           </nav>
 
