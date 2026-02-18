@@ -32,8 +32,6 @@ export default function TestMeetingPage() {
       {/* ビデオエリア */}
       <VideoArea
         cameraOn={cameraOn}
-        selfUserName="自分"
-        remoteUserName="相手"
         onTap={toggleControls}
       />
 

@@ -1,91 +1,40 @@
 'use client'
 
-import { Box, Typography, Avatar, Fade } from '@mui/material';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import { Grid2, Box, Typography } from '@mui/material';
 
 interface VideoAreaProps {
   cameraOn: boolean;
-  selfUserName?: string;
-  remoteUserName?: string;
   onTap: () => void;
-}
-
-/** ユーザー名バッジ（各ペインの左下に表示） */
-function NameBadge({ name }: { name: string }) {
-  return (
-    <Box
-      sx={{
-        position: 'absolute',
-        bottom: { xs: 12, sm: 16 },
-        left: { xs: 12, sm: 16 },
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        padding: { xs: '4px 10px', sm: '6px 14px' },
-        borderRadius: 1,
-        backdropFilter: 'blur(4px)',
-      }}
-    >
-      <Typography variant="body2" color="white" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
-        {name}
-      </Typography>
-    </Box>
-  );
-}
-
-/** カメラOFF時のアバター表示 */
-function CameraOffPlaceholder({ userName }: { userName: string }) {
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <Avatar
-        sx={{
-          width: { xs: 56, sm: 96 },
-          height: { xs: 56, sm: 96 },
-          backgroundColor: 'grey.700',
-          fontSize: { xs: 24, sm: 40 },
-        }}
-      >
-        {userName.charAt(0).toUpperCase()}
-      </Avatar>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <VideocamOffIcon sx={{ color: 'grey.500', fontSize: { xs: 16, sm: 20 } }} />
-        <Typography variant="body2" color="grey.400">
-          カメラはオフです
-        </Typography>
-      </Box>
-    </Box>
-  );
 }
 
 export default function VideoArea({
   cameraOn,
-  selfUserName = '自分',
-  remoteUserName = '相手',
   onTap,
 }: VideoAreaProps) {
   return (
-    <Box
+    <Grid2
+      container
       onClick={onTap}
       sx={{
         width: '100%',
         height: '100vh',
         backgroundColor: 'grey.900',
-        display: 'flex',
-        flexDirection: 'row',
         overflow: 'hidden',
         cursor: 'pointer',
         zIndex: 1000,
       }}
     >
-      {/* ── 相手の映像（左・大） ── */}
-      <Box
+      {/* ── 相手の映像（スマホ:全幅、PC:9列） ── */}
+      <Grid2
+        size={cameraOn ? { xs: 12, sm: 9 } : 12}
         sx={{
-          flex: cameraOn ? 3 : 1,
-          transition: 'flex 0.3s ease-in-out',
-          position: 'relative',
+          height: { xs: cameraOn ? '70vh' : '100vh', sm: '100%' },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRight: cameraOn ? '2px solid rgba(255,255,255,0.1)' : 'none',
+          borderRight: { xs: 'none', sm: cameraOn ? '2px solid rgba(255,255,255,0.1)' : 'none' },
+          borderBottom: { xs: cameraOn ? '2px solid rgba(255,255,255,0.1)' : 'none', sm: 'none' },
         }}
       >
         <Typography
@@ -95,48 +44,42 @@ export default function VideoArea({
         >
           相手の映像（模擬）
         </Typography>
-        <NameBadge name={remoteUserName} />
-      </Box>
+      </Grid2>
 
-      {/* ── 自分の映像（右）カメラON時 ── */}
-      <Fade in={cameraOn} timeout={300} unmountOnExit>
-        <Box
+      {/* ── 自分の映像（スマホ:全幅・下、PC:3列・右上）カメラON時 ── */}
+      {cameraOn && (
+        <Grid2
+          size={{ xs: 12, sm: 3 }}
           sx={{
-            flex: 1,
-            position: 'relative',
+            height: { xs: '30vh', sm: '100%' },
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            flexDirection: 'column',
+            backgroundColor: 'grey.900',
           }}
         >
-          <Typography
-            variant="body1"
-            color="white"
-            sx={{ textAlign: 'center', px: 1, fontSize: { xs: '0.75rem', sm: '1rem' } }}
+          {/* 上部：自分の映像 */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              aspectRatio: '16 / 9',
+              width: '100%',
+            }}
           >
-            自分の映像（模擬）
-          </Typography>
-          <NameBadge name={selfUserName} />
-        </Box>
-      </Fade>
-
-      {/* ── 自分の映像（右）カメラOFF時 ── */}
-      {!cameraOn && (
-        <Box
-          sx={{
-            flex: 1,
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'grey.800',
-          }}
-        >
-          <CameraOffPlaceholder userName={selfUserName} />
-          <NameBadge name={selfUserName} />
-        </Box>
+            <Typography
+              variant="body1"
+              color="white"
+              sx={{ textAlign: 'center', px: 1, fontSize: { xs: '0.75rem', sm: '1rem' } }}
+            >
+              自分の映像（模擬）
+            </Typography>
+          </Box>
+          {/* 下部：空きスペース */}
+          <Box sx={{ flex: 1 }} />
+        </Grid2>
       )}
-    </Box>
+    </Grid2>
   );
 }
