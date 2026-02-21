@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(bash)",
+      "Bash(source:*)",
+      "Bash(nvm use:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(fuser:*)",
+      "Bash(kill:*)",
+      "Bash(du:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command \"Get-ItemProperty ''HKLM:\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Uninstall\\\\*'',''HKCU:\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Uninstall\\\\*'' 2>$null | Where-Object { $_.DisplayName -like ''*Claude*'' } | Select-Object DisplayName, UninstallString | Format-List\")",
+      "Bash(sqlite3:*)"
+    ]
+  }
+}
