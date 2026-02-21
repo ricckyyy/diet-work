@@ -15,6 +15,12 @@ export async function middleware(request: NextRequest) {
       }
     })
 
+    // ローカル開発環境以外では test-meeting / test-meeting-resize を 404 にする
+    const isTestPage = request.nextUrl.pathname.startsWith("/test-meeting")
+    if (isTestPage && process.env.NODE_ENV !== "development") {
+      return new NextResponse(null, { status: 404 })
+    }
+
     // 開発環境またはプレビュー環境では認証スキップ
     if (shouldSkipAuth()) {
       console.log("[Middleware] Auth skip mode - skipping authentication")
