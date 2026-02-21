@@ -1,16 +1,43 @@
 'use client'
 
-import { Grid2, Box, Typography } from '@mui/material';
+import { Grid2, Box, Typography, IconButton } from '@mui/material';
+import CameraswitchIcon from '@mui/icons-material/Cameraswitch';
+import PersonIcon from '@mui/icons-material/Person';
+import LandscapeIcon from '@mui/icons-material/Landscape';
+import { useEffect, useRef } from 'react';
 
 interface VideoAreaProps {
   cameraOn: boolean;
   onTap: () => void;
+  cameraLabel?: string;
+  onFlipCamera?: () => void;
+  localStream?: MediaStream | null;
+  facingMode?: 'user' | 'environment';
 }
 
 export default function VideoArea({
   cameraOn,
   onTap,
+  cameraLabel = 'Camera',
+  onFlipCamera,
+  localStream,
+  facingMode = 'environment',
 }: VideoAreaProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // stream が変わるたびに video 要素にセット
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = localStream ?? null;
+    }
+  }, [localStream]);
+
+  // フロント/リアでデザインを切り替え
+  const isFront = facingMode === 'user';
+  const mockGradient = isFront
+    ? 'linear-gradient(135deg, #43cea2 0%, #185a9d 100%)' // フロント: 青緑系
+    : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'; // リア: ピンク系
+  const MockIcon = isFront ? PersonIcon : LandscapeIcon;
   return (
     <Grid2
       container
@@ -60,21 +87,67 @@ export default function VideoArea({
           {/* 上部：自分の映像 */}
           <Box
             sx={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              background: mockGradient,
               aspectRatio: '16 / 9',
               width: '100%',
+              overflow: 'hidden',
+              transition: 'background 0.4s ease',
             }}
           >
-            <Typography
-              variant="body1"
-              color="white"
-              sx={{ textAlign: 'center', px: 1, fontSize: { xs: '0.75rem', sm: '1rem' } }}
+            {/* 実映像（フロントはミラー反転） */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: localStream ? 'block' : 'none',
+                transform: isFront ? 'scaleX(-1)' : 'none',
+              }}
+            />
+            {/* stream なし時: アイコン + ラベル */}
+            {!localStream && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, position: 'relative', zIndex: 1 }}>
+                <MockIcon sx={{ color: 'rgba(255,255,255,0.8)', fontSize: { xs: 28, sm: 40 } }} />
+                <Typography
+                  variant="body1"
+                  color="white"
+                  sx={{ textAlign: 'center', px: 1, fontSize: { xs: '0.75rem', sm: '1rem' } }}
+                >
+                  {cameraLabel}
+                </Typography>
+              </Box>
+            )}
+            {/* フリップボタン（右上オーバーレイ） */}
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onFlipCamera?.();
+              }}
+              sx={{
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                color: 'white',
+                backgroundColor: 'rgba(0,0,0,0.35)',
+                '&:hover': { backgroundColor: 'rgba(0,0,0,0.55)' },
+                padding: '4px',
+                zIndex: 2,
+              }}
+              size="small"
+              aria-label="カメラを切り替える"
             >
-              自分の映像（模擬）
-            </Typography>
+              <CameraswitchIcon fontSize="small" />
+            </IconButton>
           </Box>
           {/* 下部：空きスペース */}
           <Box sx={{ flex: 1 }} />

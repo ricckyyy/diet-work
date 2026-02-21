@@ -14,12 +14,16 @@ export default function TestMeetingPage() {
     chatOpen,
     controlsVisible,
     notification,
+    cameraLabel,
+    facingMode,
+    localStream,
     toggleMic,
     toggleCamera,
     toggleChat,
     toggleControls,
     closeNotification,
-    handleLeave
+    handleLeave,
+    handleFlipCamera,
   } = useMeetingState();
 
   return (
@@ -33,6 +37,10 @@ export default function TestMeetingPage() {
       <VideoArea
         cameraOn={cameraOn}
         onTap={toggleControls}
+        cameraLabel={cameraLabel}
+        onFlipCamera={handleFlipCamera}
+        localStream={localStream}
+        facingMode={facingMode}
       />
 
       {/* コントロールバー */}
