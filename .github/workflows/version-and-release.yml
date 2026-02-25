@@ -129,15 +129,20 @@ jobs:
 
       - name: GitHubリリースを作成
         if: inputs.dry_run != true
-        uses: softprops/action-gh-release@v2
+        uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.bump_version.outputs.new_version }}
-          name: Release v${{ steps.bump_version.outputs.new_version }}
-          body: ${{ steps.release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
+          script: |
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: 'v${{ steps.bump_version.outputs.new_version }}',
+              name: 'Release v${{ steps.bump_version.outputs.new_version }}',
+              body: `${{ steps.release_notes.outputs.notes }}`,
+              draft: false,
+              prerelease: false,
+            });
 
       - name: リリース完了サマリー
         run: |
