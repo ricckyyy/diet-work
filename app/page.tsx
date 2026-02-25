@@ -247,14 +247,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto space-y-4">
-        {/* 推移グラフ - 一番上に配置 */}
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-lg mx-auto px-3 pt-3 pb-4 space-y-2">
+
+        {/* グラフ（縮小版・一番上） */}
         <WeightAndSideJobChart />
 
-        {/* 共通日付ピッカー・保存ボタン */}
-        <div className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4">
-          <label htmlFor="recordDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+        {/* 日付 + 保存ボタン */}
+        <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm px-3 py-2">
+          <label htmlFor="recordDate" className="text-xs font-medium text-gray-500 whitespace-nowrap w-10 shrink-0">
             記録日
           </label>
           <input
@@ -263,237 +264,202 @@ export default function Home() {
             value={recordDate}
             onChange={(e) => setRecordDate(e.target.value)}
             max={todayStr}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+            className="flex-1 min-w-0 px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
           <button
             type="button"
             onClick={handleCombinedSubmit}
             disabled={loading}
-            className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+            className="shrink-0 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? '保存中...' : '保存'}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* 第1カラム: 体重記録 */}
-          <div className="space-y-4">
-        {/* 体重記録カード */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            体重記録
-          </h1>
-          
-          <p className="text-sm text-gray-500 mb-6">
-            {today}
-          </p>
+        {/* 4行入力カード */}
+        <div className="bg-white rounded-lg shadow-sm px-3 py-2 space-y-2">
 
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-2">
-                体重 (kg)
-              </label>
-              <input
-                id="weight"
-                type="number"
-                step="0.1"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                placeholder="65.0"
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          {message && (
-            <div className={`mt-4 p-3 rounded-md ${
-              message.includes('失敗') || message.includes('エラー')
-                ? 'bg-red-50 text-red-700'
-                : 'bg-green-50 text-green-700'
-            }`}>
-              {message}
-            </div>
-          )}
-
-          {latestWeight && previousWeight && diff !== null && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-md">
-              <h2 className="text-sm font-medium text-gray-700 mb-2">前日比</h2>
-              <p className={`text-2xl font-bold ${
-                diff > 0 ? 'text-red-600' : diff < 0 ? 'text-blue-600' : 'text-gray-600'
+          {/* 体重行 */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="weight" className="text-sm font-medium text-gray-700 w-14 shrink-0 leading-tight">
+              体重
+              <span className="block text-xs font-normal text-gray-400">kg</span>
+            </label>
+            <input
+              id="weight"
+              type="number"
+              step="0.1"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              placeholder="65.0"
+              disabled={loading}
+            />
+            {diff !== null && (
+              <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full ${
+                diff > 0 ? 'bg-red-100 text-red-600' : diff < 0 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
               }`}>
-                {diff > 0 ? '+' : ''}{diff.toFixed(1)} kg
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                前回: {previousWeight.value}kg → 最新: {latestWeight.value}kg
-              </p>
-            </div>
-          )}
+                {diff > 0 ? '+' : ''}{diff.toFixed(1)}kg
+              </span>
+            )}
+          </div>
+
+          {/* 活動行 */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="minutes" className="text-sm font-medium text-gray-700 w-14 shrink-0 leading-tight">
+              活動
+              <span className="block text-xs font-normal text-gray-400">分</span>
+            </label>
+            <input
+              id="minutes"
+              type="number"
+              min="0"
+              value={sideJobMinutes}
+              onChange={(e) => setSideJobMinutes(e.target.value)}
+              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              placeholder="30"
+              disabled={loading}
+            />
+          </div>
+
+          {/* メモ行 */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="memo" className="text-sm font-medium text-gray-700 w-14 shrink-0">
+              メモ
+            </label>
+            <input
+              id="memo"
+              type="text"
+              value={sideJobMemo}
+              onChange={(e) => setSideJobMemo(e.target.value)}
+              maxLength={200}
+              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
+              placeholder="ブログ記事執筆..."
+              disabled={loading}
+            />
+          </div>
+
+          {/* ストップウォッチ行 */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 w-14 shrink-0 leading-tight">
+              SW
+              <span className="block text-xs font-normal text-gray-400">計測</span>
+            </label>
+            <span className="text-lg font-bold font-mono text-indigo-600 w-16 text-center shrink-0 tabular-nums">
+              {formatTime(elapsedSeconds)}
+            </span>
+            <button
+              type="button"
+              onClick={handleStartStopTimer}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors ${
+                isTimerRunning
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}
+            >
+              {isTimerRunning ? '⏸ 停止' : '▶ 開始'}
+            </button>
+            <button
+              type="button"
+              onClick={handleResetTimer}
+              disabled={isTimerRunning}
+              className="shrink-0 px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-md font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ↺
+            </button>
+          </div>
         </div>
-          </div>
 
-          {/* 第2カラム: 副業記録 */}
-          <div className="space-y-4">
-        {/* 副業記録カード */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            活動記録
-          </h1>
-          
-          <p className="text-sm text-gray-500 mb-6">
-            {today}
-          </p>
-
-          {/* ストップウォッチ */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-            <div className="text-center mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">ストップウォッチ</p>
-              <p className="text-4xl font-bold text-indigo-600 font-mono">
-                {formatTime(elapsedSeconds)}
+        {/* フィードバックメッセージ */}
+        {(message || sideJobMessage) && (
+          <div className="space-y-1">
+            {message && (
+              <p className={`text-xs px-3 py-1.5 rounded-md ${
+                message.includes('失敗') || message.includes('エラー')
+                  ? 'bg-red-50 text-red-700'
+                  : 'bg-green-50 text-green-700'
+              }`}>
+                {message}
               </p>
-            </div>
-            
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleStartStopTimer}
-                className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                  isTimerRunning
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {isTimerRunning ? '⏸ 停止' : '▶ 開始'}
-              </button>
-              
-              <button
-                type="button"
-                onClick={handleResetTimer}
-                disabled={isTimerRunning}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-medium transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-              >
-                🔄 リセット
-              </button>
-            </div>
+            )}
+            {sideJobMessage && (
+              <p className={`text-xs px-3 py-1.5 rounded-md ${
+                sideJobMessage.includes('失敗') || sideJobMessage.includes('エラー')
+                  ? 'bg-red-50 text-red-700'
+                  : 'bg-green-50 text-green-700'
+              }`}>
+                {sideJobMessage}
+              </p>
+            )}
           </div>
+        )}
 
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="minutes" className="block text-sm font-medium text-gray-700 mb-2">
-                実施時間 (分)
-              </label>
-              <input
-                id="minutes"
-                type="number"
-                min="0"
-                value={sideJobMinutes}
-                onChange={(e) => setSideJobMinutes(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                placeholder="30"
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-2">
-                メモ (任意)
-              </label>
-              <textarea
-                id="memo"
-                value={sideJobMemo}
-                onChange={(e) => setSideJobMemo(e.target.value)}
-                maxLength={200}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="ブログ記事執筆..."
-                rows={2}
-                disabled={loading}
-              />
-            </div>
-          </div>
-
-          {sideJobMessage && (
-            <div className={`mt-4 p-3 rounded-md ${
-              sideJobMessage.includes('失敗') || sideJobMessage.includes('エラー')
-                ? 'bg-red-50 text-red-700'
-                : 'bg-green-50 text-green-700'
-            }`}>
-              {sideJobMessage}
-            </div>
-          )}
+        {/* 区切り */}
+        <div className="flex items-center gap-2 pt-2">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400">活動実績</span>
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
-          </div>
 
-          {/* 第3カラム: 副業タイム警告と副業実績 */}
-          <div className="space-y-4">
-        {/* 副業タイム警告 */}
+        {/* 体重増加警告 */}
         {showSideJob && (
-          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-yellow-900 mb-2 flex items-center gap-2">
-              ⚠️ 活動タイム
-            </h2>
-            <p className="text-yellow-800">
-              体重が増加しました！今日は活動30分を実施しましょう
+          <div className="bg-yellow-50 border border-yellow-400 rounded-lg px-3 py-2 flex items-center gap-2">
+            <span className="text-yellow-900 text-sm font-semibold flex-1">
+              ⚠️ 体重増加！活動30分を実施しましょう
+            </span>
+          </div>
+        )}
+
+        {/* 活動実績（3列コンパクト） */}
+        {stats && (
+          <div className="bg-white rounded-lg shadow-sm px-3 py-2">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-blue-50 rounded-md py-2">
+                <p className="text-xs text-gray-500">今日</p>
+                <p className="text-sm font-bold text-blue-600">
+                  {stats.today > 0 ? formatMinutes(stats.today) : '—'}
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-md py-2">
+                <p className="text-xs text-gray-500">今週</p>
+                <p className="text-sm font-bold text-green-600">{formatMinutes(stats.week.total)}</p>
+                <p className="text-xs text-gray-400">{stats.week.count}日</p>
+              </div>
+              <div className="bg-purple-50 rounded-md py-2">
+                <p className="text-xs text-gray-500">今月</p>
+                <p className="text-sm font-bold text-purple-600">{formatMinutes(stats.month.total)}</p>
+                <p className="text-xs text-gray-400">{stats.month.count}日</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 前日比詳細 */}
+        {latestWeight && previousWeight && diff !== null && (
+          <div className="bg-white rounded-lg shadow-sm px-3 py-2 flex items-center justify-between">
+            <p className="text-xs text-gray-500">前回 {previousWeight.value}kg → 最新 {latestWeight.value}kg</p>
+            <p className={`text-sm font-bold ${
+              diff > 0 ? 'text-red-600' : diff < 0 ? 'text-blue-600' : 'text-gray-600'
+            }`}>
+              {diff > 0 ? '+' : ''}{diff.toFixed(1)} kg
             </p>
           </div>
         )}
 
-        {/* 副業実績カード */}
-        {stats && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              📊 活動実績
-            </h2>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-md">
-                <span className="text-sm font-medium text-gray-700">今日</span>
-                <span className="text-lg font-bold text-blue-600">
-                  {stats.today > 0 ? formatMinutes(stats.today) : '未記録'}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded-md">
-                <span className="text-sm font-medium text-gray-700">今週</span>
-                <div className="text-right">
-                  <span className="text-lg font-bold text-green-600">
-                    {formatMinutes(stats.week.total)}
-                  </span>
-                  <p className="text-xs text-gray-500">{stats.week.count}日分</p>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center p-3 bg-purple-50 rounded-md">
-                <span className="text-sm font-medium text-gray-700">今月</span>
-                <div className="text-right">
-                  <span className="text-lg font-bold text-purple-600">
-                    {formatMinutes(stats.month.total)}
-                  </span>
-                  <p className="text-xs text-gray-500">{stats.month.count}日分</p>
-                </div>
-              </div>
+        {/* 健康記録リンク */}
+        <Link
+          href="/health-record"
+          className="block bg-white rounded-lg shadow-sm px-4 py-3 hover:shadow-md transition-shadow border-l-4 border-green-500"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-800">健康記録</p>
+              <p className="text-xs text-gray-500 mt-0.5">日々の健康データをグラフで確認</p>
             </div>
+            <span className="text-gray-400 text-xl">&rarr;</span>
           </div>
-        )}
-          </div>
-        </div>
+        </Link>
 
-        {/* Health Record Link */}
-        <div className="lg:col-span-3">
-          <Link
-            href="/health-record"
-            className="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-gray-800">健康記録</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  日々の健康データを記録・グラフで確認
-                </p>
-              </div>
-              <span className="text-gray-400 text-2xl">&rarr;</span>
-            </div>
-          </Link>
-        </div>
       </div>
     </div>
   )
