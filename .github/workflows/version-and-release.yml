@@ -5,6 +5,13 @@ on:
     branches:
       - main
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'ドライラン（タグ・リリース作成をスキップ）'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -13,8 +20,8 @@ jobs:
   version-and-release:
     runs-on: ubuntu-latest
     name: バージョン自動更新とリリース作成
-    # PRがマージされた場合のみ実行
-    if: github.event.pull_request.merged == true
+    # PRマージ時 or 手動実行のみ
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
 
     steps:
       - name: リポジトリのチェックアウト
@@ -65,8 +72,10 @@ jobs:
           TAG_NAME="v$NEXT_VERSION"
           echo "次のバージョン予定: $TAG_NAME"
 
-          # タグがすでに存在する場合はスキップして既存タグを使用
-          if git tag --list | grep -q "^$TAG_NAME$"; then
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "ドライランモード: バージョン更新・タグ作成をスキップ"
+            echo "new_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          elif git tag --list | grep -q "^$TAG_NAME$"; then
             echo "タグ $TAG_NAME はすでに存在します。package.jsonのみ更新します。"
             node -e "
               const fs = require('fs');
@@ -76,15 +85,18 @@ jobs:
             "
             git add package.json
             git commit -m "chore: バージョンを $NEXT_VERSION に更新 [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "新しいバージョン: $NEW_VERSION"
           else
             npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "新しいバージョン: $NEW_VERSION"
           fi
 
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "新しいバージョン: $NEW_VERSION"
-
       - name: 変更をプッシュ
+        if: inputs.dry_run != true
         run: |
           git push origin HEAD:main --follow-tags
 
@@ -116,6 +128,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: GitHubリリースを作成
+        if: inputs.dry_run != true
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -128,6 +141,13 @@ jobs:
 
       - name: リリース完了サマリー
         run: |
-          echo "✅ バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }}"
-          echo "✅ リリース v${{ steps.bump_version.outputs.new_version }} を作成しました"
-          echo "🔗 https://github.com/${{ github.repository }}/releases/tag/v${{ steps.bump_version.outputs.new_version }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🧪 ドライラン完了"
+            echo "バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }} になる予定"
+            echo "リリースノート:"
+            echo "${{ steps.release_notes.outputs.notes }}"
+          else
+            echo "✅ バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }}"
+            echo "✅ リリース v${{ steps.bump_version.outputs.new_version }} を作成しました"
+            echo "🔗 https://github.com/${{ github.repository }}/releases/tag/v${{ steps.bump_version.outputs.new_version }}"
+          fi
