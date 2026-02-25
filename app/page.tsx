@@ -38,7 +38,7 @@ export default function Home() {
   
   // 日付の状態（ハイドレーションエラー回避のためクライアント側でのみ生成）
   const [today, setToday] = useState('')
-  const [weightDate, setWeightDate] = useState('')
+  const [recordDate, setRecordDate] = useState('')
   const [todayStr, setTodayStr] = useState('')
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function Home() {
     const mm = String(now.getMonth() + 1).padStart(2, '0')
     const dd = String(now.getDate()).padStart(2, '0')
     const localDateStr = `${yyyy}-${mm}-${dd}`
-    setWeightDate(localDateStr)
+    setRecordDate(localDateStr)
     setTodayStr(localDateStr)
     
     fetchLatestWeight()
@@ -137,7 +137,7 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          date: new Date(weightDate).toISOString(),
+          date: new Date(recordDate).toISOString(),
           value: weightValue
         })
       })
@@ -158,8 +158,8 @@ export default function Home() {
           setShowSideJob(false)
         }
 
-        const isToday = weightDate === todayStr
-        setMessage(`体重を記録しました: ${weightValue}kg${isToday ? '' : ` (${weightDate})`}`)
+        const isToday = recordDate === todayStr
+        setMessage(`体重を記録しました: ${weightValue}kg${isToday ? '' : ` (${recordDate})`}`)
         setWeight('')
         
         // データを再取得
@@ -198,7 +198,7 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          date: new Date().toISOString(),
+          date: new Date(recordDate).toISOString(),
           minutes: minutes,
           memo: sideJobMemo || null
         })
@@ -278,6 +278,21 @@ export default function Home() {
         {/* 推移グラフ - 一番上に配置 */}
         <WeightAndSideJobChart />
 
+        {/* 共通日付ピッカー */}
+        <div className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4">
+          <label htmlFor="recordDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            記録日
+          </label>
+          <input
+            id="recordDate"
+            type="date"
+            value={recordDate}
+            onChange={(e) => setRecordDate(e.target.value)}
+            max={todayStr}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 第1カラム: 体重記録 */}
           <div className="space-y-4">
@@ -292,20 +307,6 @@ export default function Home() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="weightDate" className="block text-sm font-medium text-gray-700 mb-2">
-                日付
-              </label>
-              <input
-                id="weightDate"
-                type="date"
-                value={weightDate}
-                onChange={(e) => setWeightDate(e.target.value)}
-                max={todayStr}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                disabled={loading}
-              />
-            </div>
             <div>
               <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-2">
                 体重 (kg)
