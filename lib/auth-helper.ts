@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
 import { DEV_USER_ID, shouldSkipAuth } from "./constants"
 
 /**
@@ -9,6 +10,17 @@ import { DEV_USER_ID, shouldSkipAuth } from "./constants"
 export async function getAuthUser() {
   // 開発環境またはプレビュー環境ではダミーユーザーを返す
   if (shouldSkipAuth()) {
+    // DBに開発用ユーザーが存在しない場合は作成する（外部キー制約対応）
+    await prisma.user.upsert({
+      where: { email: "dev@example.com" },
+      update: {},
+      create: {
+        id: DEV_USER_ID,
+        email: "dev@example.com",
+        name: "開発ユーザー",
+      },
+    })
+
     return {
       id: DEV_USER_ID,
       email: "dev@example.com",
@@ -22,7 +34,7 @@ export async function getAuthUser() {
   if (!session?.user?.id) {
     throw new Error("Unauthorized")
   }
-  
+
   return {
     id: session.user.id,
     email: session.user.email || null,
