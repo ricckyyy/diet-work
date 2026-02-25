@@ -182,7 +182,7 @@ export default function Home() {
         })
 
         if (sideJobRes.ok) {
-          setSideJobMessage(`副業時間を記録しました: ${minutes}分`)
+          setSideJobMessage(`活動時間を記録しました: ${minutes}分`)
           setSideJobMinutes('')
           setSideJobMemo('')
           setIsTimerRunning(false)
@@ -190,7 +190,7 @@ export default function Home() {
           setStartTime(null)
           await fetchSideJobStats()
         } else {
-          setSideJobMessage('副業時間の保存に失敗しました')
+          setSideJobMessage('活動時間の保存に失敗しました')
         }
       }
     } catch (error) {
@@ -337,7 +337,7 @@ export default function Home() {
         {/* 副業記録カード */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            副業記録
+            活動記録
           </h1>
           
           <p className="text-sm text-gray-500 mb-6">
@@ -429,10 +429,10 @@ export default function Home() {
         {showSideJob && (
           <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-yellow-900 mb-2 flex items-center gap-2">
-              ⚠️ 副業タイム
+              ⚠️ 活動タイム
             </h2>
             <p className="text-yellow-800">
-              体重が増加しました！今日は副業30分を実施しましょう
+              体重が増加しました！今日は活動30分を実施しましょう
             </p>
           </div>
         )}
@@ -441,7 +441,7 @@ export default function Home() {
         {stats && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              📊 副業実績
+              📊 活動実績
             </h2>
             
             <div className="space-y-3">
