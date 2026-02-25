@@ -38,15 +38,25 @@ export default function Home() {
   
   // 日付の状態（ハイドレーションエラー回避のためクライアント側でのみ生成）
   const [today, setToday] = useState('')
+  const [weightDate, setWeightDate] = useState('')
+  const [todayStr, setTodayStr] = useState('')
 
   useEffect(() => {
     // クライアント側でのみ日付を生成
-    setToday(new Date().toLocaleDateString('ja-JP', {
+    const now = new Date()
+    setToday(now.toLocaleDateString('ja-JP', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       weekday: 'long'
     }))
+    // 体重入力用の日付をYYYY-MM-DD形式で設定（ローカル時刻を使用）
+    const yyyy = now.getFullYear()
+    const mm = String(now.getMonth() + 1).padStart(2, '0')
+    const dd = String(now.getDate()).padStart(2, '0')
+    const localDateStr = `${yyyy}-${mm}-${dd}`
+    setWeightDate(localDateStr)
+    setTodayStr(localDateStr)
     
     fetchLatestWeight()
     fetchPreviousWeight()
@@ -127,7 +137,7 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          date: new Date().toISOString(),
+          date: new Date(weightDate).toISOString(),
           value: weightValue
         })
       })
@@ -148,7 +158,8 @@ export default function Home() {
           setShowSideJob(false)
         }
 
-        setMessage(`体重を記録しました: ${weightValue}kg`)
+        const isToday = weightDate === todayStr
+        setMessage(`体重を記録しました: ${weightValue}kg${isToday ? '' : ` (${weightDate})`}`)
         setWeight('')
         
         // データを再取得
@@ -282,8 +293,22 @@ export default function Home() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
+              <label htmlFor="weightDate" className="block text-sm font-medium text-gray-700 mb-2">
+                日付
+              </label>
+              <input
+                id="weightDate"
+                type="date"
+                value={weightDate}
+                onChange={(e) => setWeightDate(e.target.value)}
+                max={todayStr}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                disabled={loading}
+              />
+            </div>
+            <div>
               <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-2">
-                今日の体重 (kg)
+                体重 (kg)
               </label>
               <input
                 id="weight"
