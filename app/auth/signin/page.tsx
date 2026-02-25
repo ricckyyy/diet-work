@@ -6,6 +6,8 @@ export default async function SignInPage({
   searchParams: Promise<{ callbackUrl?: string }>
 }) {
   const params = await searchParams
+  const showTestLogin = !!process.env.TEST_USER_EMAIL
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
@@ -52,6 +54,52 @@ export default async function SignInPage({
               Googleでログイン
             </button>
           </form>
+
+          {showTestLogin && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-white px-2 text-gray-400">または</span>
+                </div>
+              </div>
+
+              <form
+                action={async (formData: FormData) => {
+                  "use server"
+                  await signIn("credentials", {
+                    email: formData.get("email"),
+                    password: formData.get("password"),
+                    redirectTo: params.callbackUrl ?? "/",
+                  })
+                }}
+                className="space-y-3"
+              >
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="メールアドレス"
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="パスワード"
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-gray-800 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-700 transition-all"
+                >
+                  テストアカウントでログイン
+                </button>
+              </form>
+            </>
+          )}
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-500">

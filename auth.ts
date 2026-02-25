@@ -1,7 +1,11 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+	adapter: PrismaAdapter(prisma),
 	providers: [
 		Google({
 			clientId: process.env.AUTH_GOOGLE_ID,
@@ -12,6 +16,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 					access_type: "offline",
 					response_type: "code",
 				},
+			},
+		}),
+		Credentials({
+			name: "テストアカウント",
+			credentials: {
+				email: { label: "メール", type: "email" },
+				password: { label: "パスワード", type: "password" },
+			},
+			async authorize(credentials) {
+				if (!process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD) {
+					return null;
+				}
+				if (
+					credentials?.email !== process.env.TEST_USER_EMAIL ||
+					credentials?.password !== process.env.TEST_USER_PASSWORD
+				) {
+					return null;
+				}
+				const user = await prisma.user.upsert({
+					where: { email: process.env.TEST_USER_EMAIL },
+					update: {},
+					create: { email: process.env.TEST_USER_EMAIL, name: "テストユーザー" },
+				});
+				return { id: user.id, email: user.email, name: user.name };
 			},
 		}),
 	],
