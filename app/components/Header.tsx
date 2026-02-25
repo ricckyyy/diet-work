@@ -14,7 +14,7 @@ export default async function Header() {
       <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-lg font-bold text-gray-800 hover:text-gray-600 transition-colors">
-            ダイエット × 副業 連動アプリ
+            ダイエット × 活動 連動アプリ
           </Link>
           <nav className="hidden sm:flex items-center gap-4">
             <Link

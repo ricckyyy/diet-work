@@ -4,8 +4,8 @@ import Header from "./components/Header";
 import MuiThemeProvider from "./providers/MuiThemeProvider";
 
 export const metadata: Metadata = {
-  title: "ダイエット × 副業 連動アプリ",
-  description: "体重と副業を管理するアプリ",
+  title: "ダイエット × 活動 連動アプリ",
+  description: "体重と活動を管理するアプリ",
 };
 
 export default function RootLayout({

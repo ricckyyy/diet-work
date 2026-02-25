@@ -31,10 +31,10 @@ export default async function SignInPage({
       <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            ダイエット × 副業 連動アプリ
+            ダイエット × 活動 連動アプリ
           </h1>
           <p className="text-gray-600">
-            ログインして体重管理と副業記録を始めましょう
+            ログインして体重管理と活動記録を始めましょう
           </p>
         </div>
 

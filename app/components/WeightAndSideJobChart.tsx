@@ -149,20 +149,20 @@ export default function WeightAndSideJobChart() {
             <YAxis 
               yAxisId="right"
               orientation="right"
-              label={{ value: '副業時間 (分)', angle: 90, position: 'insideRight' }}
+              label={{ value: '活動時間 (分)', angle: 90, position: 'insideRight' }}
             />
             <Tooltip 
               formatter={(value: number | undefined, name: string | undefined) => {
                 if (value === undefined || value === null || !name) return ['', '']
                 if (name === 'weight') return [`${value} kg`, '体重']
-                if (name === 'minutes') return [`${value} 分`, '副業時間']
+                if (name === 'minutes') return [`${value} 分`, '活動時間']
                 return [value, name]
               }}
             />
             <Legend 
               formatter={(value) => {
                 if (value === 'weight') return '体重 (kg)'
-                if (value === 'minutes') return '副業時間 (分)'
+                if (value === 'minutes') return '活動時間 (分)'
                 return value
               }}
             />
@@ -186,7 +186,7 @@ export default function WeightAndSideJobChart() {
       </div>
 
       <div className="mt-4 text-sm text-gray-600">
-        <p>💡 青い線が体重、緑の棒グラフが副業時間を表しています</p>
+        <p>💡 青い線が体重、緑の棒グラフが活動時間を表しています</p>
       </div>
     </div>
   )
