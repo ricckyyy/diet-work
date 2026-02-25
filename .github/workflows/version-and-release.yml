@@ -1,9 +1,10 @@
 name: バージョンアップとリリース
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types: [closed]
 
 permissions:
   contents: write
@@ -12,8 +13,8 @@ jobs:
   version-and-release:
     runs-on: ubuntu-latest
     name: バージョン自動更新とリリース作成
-    # バージョン更新コミットによる無限ループを防ぐ
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    # PRがマージされた場合のみ実行
+    if: github.event.pull_request.merged == true
 
     steps:
       - name: リポジトリのチェックアウト
@@ -21,6 +22,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - name: Node.jsのセットアップ
         uses: actions/setup-node@v4
