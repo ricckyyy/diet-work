@@ -59,7 +59,7 @@ jobs:
 
           if [ -z "$PREVIOUS_TAG" ]; then
             COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
-            NOTES="## 🎉 最初のリリース
+            NOTES="## 最初のリリース
 
 ### 変更内容
 $COMMITS"
@@ -69,38 +69,69 @@ $COMMITS"
             if [ -z "$COMMITS" ]; then
               COMMITS="- マイナーな改善と修正"
             fi
-            NOTES="## 📝 変更内容
+            NOTES="## 変更内容
 
 $COMMITS
 
 ---
-🔍 **すべての変更を確認**: $COMPARE_URL"
+すべての変更を確認: $COMPARE_URL"
           fi
 
           {
-            echo "notes<<EOF"
+            echo "notes<<ENDOFNOTES"
             echo "$NOTES"
-            echo "EOF"
+            echo "ENDOFNOTES"
           } >> "$GITHUB_OUTPUT"
 
       - name: PRにリリースプレビューをコメント
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: actions/github-script@v7
         with:
-          header: release-preview
-          message: |
-            ## 🚀 リリースプレビュー
+          script: |
+            const currentVersion = '${{ steps.get_version.outputs.current_version }}';
+            const nextVersion = '${{ steps.next_version.outputs.next_version }}';
+            const previousTag = '${{ steps.get_previous_tag.outputs.previous_tag }}' || 'なし（最初のリリース）';
+            const notes = `${{ steps.release_notes.outputs.notes }}`;
+
+            const body = `## リリースプレビュー
 
             このPRをマージすると以下のリリースが作成されます。
 
             | 項目 | 内容 |
             |------|------|
-            | 現在のバージョン | `v${{ steps.get_version.outputs.current_version }}` |
-            | 次のバージョン | `v${{ steps.next_version.outputs.next_version }}` |
-            | 前回のタグ | `${{ steps.get_previous_tag.outputs.previous_tag || 'なし（最初のリリース）' }}` |
+            | 現在のバージョン | \`v${currentVersion}\` |
+            | 次のバージョン | \`v${nextVersion}\` |
+            | 前回のタグ | \`${previousTag}\` |
 
-            ### 📋 リリースノートプレビュー
+            ### リリースノートプレビュー
 
-            ${{ steps.release_notes.outputs.notes }}
+            ${notes}
 
             ---
             > このコメントはPRが更新されるたびに自動更新されます。
+            <!-- release-preview-comment -->`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.body.includes('<!-- release-preview-comment -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
