@@ -98,10 +98,7 @@ jobs:
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "最初のリリースです"
             COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
-            NOTES="## 🎉 最初のリリース
-
-### 変更内容
-$COMMITS"
+            NOTES=$(printf '## 最初のリリース\n\n### 変更内容\n%s' "$COMMITS")
           else
             echo "前回のタグ: $PREVIOUS_TAG"
             COMMITS=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || true)
@@ -109,12 +106,7 @@ $COMMITS"
             if [ -z "$COMMITS" ]; then
               COMMITS="- マイナーな改善と修正"
             fi
-            NOTES="## 📝 変更内容
-
-$COMMITS
-
----
-🔍 **すべての変更を確認**: $COMPARE_URL"
+            NOTES=$(printf '## 変更内容\n\n%s\n\n---\nすべての変更を確認: %s' "$COMMITS" "$COMPARE_URL")
           fi
 
           {

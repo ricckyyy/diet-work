@@ -59,22 +59,14 @@ jobs:
 
           if [ -z "$PREVIOUS_TAG" ]; then
             COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
-            NOTES="## 最初のリリース
-
-### 変更内容
-$COMMITS"
+            NOTES=$(printf '## 最初のリリース\n\n### 変更内容\n%s' "$COMMITS")
           else
             COMMITS=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || true)
             COMPARE_URL="https://github.com/$REPO/compare/$PREVIOUS_TAG...v$NEW_VERSION"
             if [ -z "$COMMITS" ]; then
               COMMITS="- マイナーな改善と修正"
             fi
-            NOTES="## 変更内容
-
-$COMMITS
-
----
-すべての変更を確認: $COMPARE_URL"
+            NOTES=$(printf '## 変更内容\n\n%s\n\n---\nすべての変更を確認: %s' "$COMMITS" "$COMPARE_URL")
           fi
 
           {
