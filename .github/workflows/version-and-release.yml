@@ -53,14 +53,38 @@ jobs:
       - name: バージョンをインクリメント
         id: bump_version
         run: |
-          npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          # 次のパッチバージョンを計算
+          NEXT_VERSION=$(node -p "
+            const v = '$CURRENT_VERSION'.split('.');
+            v[2] = parseInt(v[2]) + 1;
+            v.join('.');
+          ")
+          TAG_NAME="v$NEXT_VERSION"
+          echo "次のバージョン予定: $TAG_NAME"
+
+          # タグがすでに存在する場合はスキップして既存タグを使用
+          if git tag --list | grep -q "^$TAG_NAME$"; then
+            echo "タグ $TAG_NAME はすでに存在します。package.jsonのみ更新します。"
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = '$NEXT_VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
+            git add package.json
+            git commit -m "chore: バージョンを $NEXT_VERSION に更新 [skip ci]"
+          else
+            npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
+          fi
+
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "新しいバージョン: $NEW_VERSION"
-      
+
       - name: 変更をプッシュ
         run: |
-          git push origin main --follow-tags
+          git push origin HEAD:main --follow-tags
       
       - name: リリースノートを生成
         id: release_notes
