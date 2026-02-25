@@ -1,0 +1,106 @@
+name: PRリリースプレビュー
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  release-preview:
+    runs-on: ubuntu-latest
+    name: マージ後のリリース内容を確認
+
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 現在のバージョンを取得
+        id: get_version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 次のバージョンを計算
+        id: next_version
+        run: |
+          CURRENT_VERSION="${{ steps.get_version.outputs.current_version }}"
+          NEXT_VERSION=$(node -p "
+            const v = '$CURRENT_VERSION'.split('.');
+            v[2] = parseInt(v[2]) + 1;
+            v.join('.');
+          ")
+          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 前回のタグを取得
+        id: get_previous_tag
+        run: |
+          git fetch --tags
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+      - name: リリースノートをプレビュー生成
+        id: release_notes
+        run: |
+          PREVIOUS_TAG="${{ steps.get_previous_tag.outputs.previous_tag }}"
+          NEW_VERSION="${{ steps.next_version.outputs.next_version }}"
+          REPO="${{ github.repository }}"
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
+            NOTES="## 🎉 最初のリリース
+
+### 変更内容
+$COMMITS"
+          else
+            COMMITS=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || true)
+            COMPARE_URL="https://github.com/$REPO/compare/$PREVIOUS_TAG...v$NEW_VERSION"
+            if [ -z "$COMMITS" ]; then
+              COMMITS="- マイナーな改善と修正"
+            fi
+            NOTES="## 📝 変更内容
+
+$COMMITS
+
+---
+🔍 **すべての変更を確認**: $COMPARE_URL"
+          fi
+
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: PRにリリースプレビューをコメント
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: release-preview
+          message: |
+            ## 🚀 リリースプレビュー
+
+            このPRをマージすると以下のリリースが作成されます。
+
+            | 項目 | 内容 |
+            |------|------|
+            | 現在のバージョン | `v${{ steps.get_version.outputs.current_version }}` |
+            | 次のバージョン | `v${{ steps.next_version.outputs.next_version }}` |
+            | 前回のタグ | `${{ steps.get_previous_tag.outputs.previous_tag || 'なし（最初のリリース）' }}` |
+
+            ### 📋 リリースノートプレビュー
+
+            ${{ steps.release_notes.outputs.notes }}
+
+            ---
+            > このコメントはPRが更新されるたびに自動更新されます。
