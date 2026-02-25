@@ -3,6 +3,13 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { shouldSkipAuth } from "@/lib/constants"
 
+// ローカル環境でのみアクセス可能なパス
+const LOCAL_ONLY_PATHS = ["/test-meeting", "/test-meeting-resize"]
+
+function isLocalOnlyPath(pathname: string): boolean {
+  return LOCAL_ONLY_PATHS.some((path) => pathname === path || pathname.startsWith(path + "/"))
+}
+
 export async function middleware(request: NextRequest) {
   try {
     console.log("[Middleware] Request:", {
@@ -14,6 +21,14 @@ export async function middleware(request: NextRequest) {
         origin: request.headers.get("origin"),
       }
     })
+
+    // ローカル環境専用ページへのアクセス制限
+    if (isLocalOnlyPath(request.nextUrl.pathname)) {
+      if (process.env.NODE_ENV !== "development") {
+        console.log("[Middleware] Blocking local-only path in non-development environment:", request.nextUrl.pathname)
+        return new NextResponse(null, { status: 404 })
+      }
+    }
 
     // 開発環境またはプレビュー環境では認証スキップ
     if (shouldSkipAuth()) {
