@@ -1,12 +1,30 @@
 import { signIn } from "@/auth"
 
+const ERROR_MESSAGES: Record<string, string> = {
+  OAuthSignin: "Googleログインの開始に失敗しました。もう一度お試しください。",
+  OAuthCallback: "Googleからのコールバック処理に失敗しました。もう一度お試しください。",
+  OAuthCreateAccount: "アカウントの作成に失敗しました。しばらく時間をおいてからお試しください。",
+  OAuthAccountNotLinked:
+    "このメールアドレスは既に別のログイン方法で登録されています。",
+  Callback: "ログイン処理中にエラーが発生しました。もう一度お試しください。",
+  Default: "ログインに失敗しました。もう一度お試しください。",
+}
+
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string }>
+  searchParams: Promise<{ callbackUrl?: string; error?: string }>
 }) {
   const params = await searchParams
   const showTestLogin = !!process.env.TEST_USER_EMAIL
+
+  // callbackUrl を相対パスに限定してオープンリダイレクトを防止
+  const rawCallbackUrl = params.callbackUrl ?? "/"
+  const callbackUrl = rawCallbackUrl.startsWith("/") ? rawCallbackUrl : "/"
+
+  const errorMessage = params.error
+    ? (ERROR_MESSAGES[params.error] ?? ERROR_MESSAGES.Default)
+    : null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -20,12 +38,18 @@ export default async function SignInPage({
           </p>
         </div>
 
+        {errorMessage && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">{errorMessage}</p>
+          </div>
+        )}
+
         <div className="space-y-4">
           <form
             action={async () => {
               "use server"
               await signIn("google", {
-                redirectTo: params.callbackUrl ?? "/",
+                redirectTo: callbackUrl,
               })
             }}
           >
@@ -72,7 +96,7 @@ export default async function SignInPage({
                   await signIn("credentials", {
                     email: formData.get("email"),
                     password: formData.get("password"),
-                    redirectTo: params.callbackUrl ?? "/",
+                    redirectTo: callbackUrl,
                   })
                 }}
                 className="space-y-3"
