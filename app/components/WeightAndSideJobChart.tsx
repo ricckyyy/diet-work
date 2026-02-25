@@ -106,10 +106,10 @@ export default function WeightAndSideJobChart() {
 
   if (loading || !mounted) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">📈 推移グラフ</h2>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">読み込み中...</p>
+      <div className="bg-white rounded-lg shadow-md p-3">
+        <h2 className="text-sm font-bold text-gray-700 mb-2">📈 推移グラフ</h2>
+        <div className="flex items-center justify-center h-40">
+          <p className="text-gray-500 text-sm">読み込み中...</p>
         </div>
       </div>
     )
@@ -117,20 +117,20 @@ export default function WeightAndSideJobChart() {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">📈 推移グラフ</h2>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">データがありません</p>
+      <div className="bg-white rounded-lg shadow-md p-3">
+        <h2 className="text-sm font-bold text-gray-700 mb-2">📈 推移グラフ</h2>
+        <div className="flex items-center justify-center h-40">
+          <p className="text-gray-500 text-sm">データがありません</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">📈 推移グラフ</h2>
-      
-      <div className="w-full h-80">
+    <div className="bg-white rounded-lg shadow-md p-3">
+      <h2 className="text-sm font-bold text-gray-700 mb-2">📈 推移グラフ</h2>
+
+      <div className="w-full h-40">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -185,9 +185,6 @@ export default function WeightAndSideJobChart() {
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-4 text-sm text-gray-600">
-        <p>💡 青い線が体重、緑の棒グラフが活動時間を表しています</p>
-      </div>
     </div>
   )
 }
