@@ -1,172 +1,147 @@
-name: 🧪 リリースワークフローのテスト
+name: リリースワークフローのテスト
 
 on:
   workflow_dispatch:
     inputs:
       test_mode:
-        description: 'テストモード（実際のリリースは作成しません）'
+        description: 'テストモード（trueにすると実際のリリースは作成しません）'
         required: true
         type: boolean
         default: true
 
 permissions:
   contents: write
-  issues: write
 
 jobs:
   test-version-and-release:
     runs-on: ubuntu-latest
     name: バージョンアップとリリースのテスト
-    
+
     steps:
       - name: リポジトリのチェックアウト
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+          ref: main
+
       - name: Node.jsのセットアップ
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Gitユーザー設定
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
+
       - name: 現在のバージョンを取得
         id: get_version
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "📦 現在のバージョン: $CURRENT_VERSION"
-      
+          echo "現在のバージョン: $CURRENT_VERSION"
+
       - name: 前回のタグを取得
         id: get_previous_tag
         run: |
+          git fetch --tags
           PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
           echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
           if [ -z "$PREVIOUS_TAG" ]; then
-            echo "🏷️ 前回のタグ: なし（最初のリリース）"
+            echo "前回のタグ: なし（最初のリリース）"
           else
-            echo "🏷️ 前回のタグ: $PREVIOUS_TAG"
+            echo "前回のタグ: $PREVIOUS_TAG"
           fi
-      
-      - name: 次のバージョンをシミュレート
-        id: simulate_version
+
+      - name: バージョンをインクリメント
+        id: bump_version
         run: |
-          CURRENT_VERSION="${{ steps.get_version.outputs.current_version }}"
-          # パッチバージョンをインクリメント
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-          MAJOR="${VERSION_PARTS[0]}"
-          MINOR="${VERSION_PARTS[1]}"
-          PATCH="${VERSION_PARTS[2]}"
-          NEXT_PATCH=$((PATCH + 1))
-          NEW_VERSION="$MAJOR.$MINOR.$NEXT_PATCH"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "✨ 次のバージョン: $NEW_VERSION"
-      
-      - name: リリースノートをシミュレート
-        id: simulate_notes
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          NEXT_VERSION=$(node -p "
+            const v = '$CURRENT_VERSION'.split('.');
+            v[2] = parseInt(v[2]) + 1;
+            v.join('.');
+          ")
+          TAG_NAME="v$NEXT_VERSION"
+          echo "次のバージョン: $TAG_NAME"
+
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            echo "テストモード: バージョン更新・タグ作成をスキップ"
+            echo "new_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          elif git tag --list | grep -q "^$TAG_NAME$"; then
+            echo "タグ $TAG_NAME はすでに存在します。package.jsonのみ更新します。"
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = '$NEXT_VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            "
+            git add package.json
+            git commit -m "chore: バージョンを $NEXT_VERSION に更新 [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 変更をプッシュ
+        if: inputs.test_mode != true
+        run: |
+          git push origin HEAD:main --follow-tags
+
+      - name: リリースノートを生成
+        id: release_notes
         run: |
           PREVIOUS_TAG="${{ steps.get_previous_tag.outputs.previous_tag }}"
-          
-          echo "📝 リリースノートのプレビュー:"
-          echo "================================"
-          
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          REPO="${{ github.repository }}"
+
           if [ -z "$PREVIOUS_TAG" ]; then
-            echo "## 🎉 最初のリリース"
-            echo ""
-            echo "### 変更内容"
-            git log --pretty=format:'- %s (%h)' --no-merges | head -10
+            COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
+            NOTES=$(printf '## 最初のリリース\n\n### 変更内容\n%s' "$COMMITS")
           else
-            echo "## 📝 変更内容 ($PREVIOUS_TAG → v${{ steps.simulate_version.outputs.new_version }})"
-            echo ""
-            echo "### コミット履歴"
-            git log $PREVIOUS_TAG..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || echo "- 変更なし"
+            COMMITS=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || true)
+            COMPARE_URL="https://github.com/$REPO/compare/$PREVIOUS_TAG...v$NEW_VERSION"
+            if [ -z "$COMMITS" ]; then
+              COMMITS="- マイナーな改善と修正"
+            fi
+            NOTES=$(printf '## 変更内容\n\n%s\n\n---\nすべての変更を確認: %s' "$COMMITS" "$COMPARE_URL")
           fi
-          
-          echo ""
-          echo "================================"
-      
-      - name: テスト結果のサマリー
+
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "リリースノートプレビュー:"
+          echo "$NOTES"
+
+      - name: GitHubリリースを作成
+        if: inputs.test_mode != true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: 'v${{ steps.bump_version.outputs.new_version }}',
+              name: 'Release v${{ steps.bump_version.outputs.new_version }}',
+              body: `${{ steps.release_notes.outputs.notes }}`,
+              draft: false,
+              prerelease: false,
+            });
+
+      - name: サマリー
         run: |
-          echo "## 🎯 テスト結果"
-          echo ""
-          echo "✅ バージョン取得: 成功"
-          echo "✅ タグ取得: 成功"
-          echo "✅ バージョンインクリメント: ${{ steps.get_version.outputs.current_version }} → ${{ steps.simulate_version.outputs.new_version }}"
-          echo "✅ リリースノート生成: 成功"
-          echo ""
-          echo "### 📋 実際のワークフローで実行される処理"
-          echo "1. package.jsonのバージョンを更新"
-          echo "2. 変更をコミット（メッセージ: 'chore: バージョンを ${{ steps.simulate_version.outputs.new_version }} に更新 [skip ci]'）"
-          echo "3. Gitタグ v${{ steps.simulate_version.outputs.new_version }} を作成"
-          echo "4. mainブランチにプッシュ"
-          echo "5. GitHubリリースを作成"
-          echo "6. デプロイ環境選択のIssueを作成"
-          echo ""
-          echo "### ⚠️ 注意"
-          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
-            echo "✅ テストモード: 実際のリリースは作成されません"
+          if [ "${{ inputs.test_mode }}" = "true" ]; then
+            echo "テストモード完了"
+            echo "バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }} になる予定"
           else
-            echo "⚠️ 本番モード: 実際のリリースが作成されます（このオプションは現在無効です）"
+            echo "リリース完了"
+            echo "バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }}"
+            echo "https://github.com/${{ github.repository }}/releases/tag/v${{ steps.bump_version.outputs.new_version }}"
           fi
-      
-      - name: デプロイ環境の選択肢を表示
-        run: |
-          echo "## 🚀 利用可能なデプロイ環境"
-          echo ""
-          echo "リリース作成後、以下の環境から選択できます："
-          echo ""
-          echo "### 1. ✅ Vercel（推奨）"
-          echo "- Next.jsの公式推奨プラットフォーム"
-          echo "- 無料枠: 月100GB帯域幅、6,000ビルド分/月"
-          echo "- セットアップ: ⭐⭐⭐⭐⭐"
-          echo ""
-          echo "### 2. Netlify"
-          echo "- 多機能で簡単なセットアップ"
-          echo "- 無料枠: 月100GB帯域幅、300ビルド分/月"
-          echo "- セットアップ: ⭐⭐⭐⭐"
-          echo ""
-          echo "### 3. Cloudflare Pages"
-          echo "- 高速CDN、無制限の帯域幅"
-          echo "- 無料枠: 無制限の帯域幅、500ビルド/月"
-          echo "- セットアップ: ⭐⭐⭐⭐"
-          echo ""
-          echo "### 4. Railway"
-          echo "- PostgreSQL統合が簡単"
-          echo "- 無料枠: $5相当のクレジット/月"
-          echo "- セットアップ: ⭐⭐⭐⭐"
-          echo ""
-          echo "### 5. Render"
-          echo "- PostgreSQL統合、自動SSL"
-          echo "- 無料枠: 750時間/月"
-          echo "- セットアップ: ⭐⭐⭐⭐"
-          echo ""
-          echo "### 📝 デプロイ設定の追加方法"
-          echo "1. GitHubの「Actions」タブを開く"
-          echo "2. 「デプロイ環境選択」ワークフローを選択"
-          echo "3. 「Run workflow」をクリック"
-          echo "4. 希望のデプロイ先を選択"
-          echo "5. プルリクエストが自動作成されます"
-      
-      - name: ワークフローファイルの検証
-        run: |
-          echo "## 🔍 ワークフローファイルの検証"
-          echo ""
-          echo "作成されたワークフローファイル:"
-          ls -la .github/workflows/
-          echo ""
-          echo "### version-and-release.yml"
-          echo "✅ 存在確認"
-          test -f .github/workflows/version-and-release.yml && echo "✅ ファイルが存在します" || echo "❌ ファイルが見つかりません"
-          echo ""
-          echo "### deployment-guide.yml"
-          echo "✅ 存在確認"
-          test -f .github/workflows/deployment-guide.yml && echo "✅ ファイルが存在します" || echo "❌ ファイルが見つかりません"
-          echo ""
-          echo "### deploy-options.yml"
-          echo "✅ 存在確認"
-          test -f .github/workflows/deploy-options.yml && echo "✅ ファイルが存在します" || echo "❌ ファイルが見つかりません"
