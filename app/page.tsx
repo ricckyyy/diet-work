@@ -27,7 +27,6 @@ export default function Home() {
   // 副業関連の状態
   const [sideJobMinutes, setSideJobMinutes] = useState('')
   const [sideJobMemo, setSideJobMemo] = useState('')
-  const [sideJobLoading, setSideJobLoading] = useState(false)
   const [sideJobMessage, setSideJobMessage] = useState('')
   const [stats, setStats] = useState<SideJobStats | null>(null)
   
@@ -38,7 +37,7 @@ export default function Home() {
   
   // 日付の状態（ハイドレーションエラー回避のためクライアント側でのみ生成）
   const [today, setToday] = useState('')
-  const [weightDate, setWeightDate] = useState('')
+  const [recordDate, setRecordDate] = useState('')
   const [todayStr, setTodayStr] = useState('')
 
   useEffect(() => {
@@ -55,7 +54,7 @@ export default function Home() {
     const mm = String(now.getMonth() + 1).padStart(2, '0')
     const dd = String(now.getDate()).padStart(2, '0')
     const localDateStr = `${yyyy}-${mm}-${dd}`
-    setWeightDate(localDateStr)
+    setRecordDate(localDateStr)
     setTodayStr(localDateStr)
     
     fetchLatestWeight()
@@ -115,9 +114,7 @@ export default function Home() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const handleCombinedSubmit = async () => {
     if (!weight) {
       setMessage('体重を入力してください')
       return
@@ -129,101 +126,78 @@ export default function Home() {
       return
     }
 
+    let minutes: number | null = null
+    if (sideJobMinutes) {
+      minutes = parseInt(sideJobMinutes)
+      if (isNaN(minutes) || minutes <= 0) {
+        setSideJobMessage('有効な時間を入力してください')
+        return
+      }
+    }
+
     setLoading(true)
     setMessage('')
+    setSideJobMessage('')
 
     try {
-      const res = await fetch('/api/weight', {
+      // 体重を保存
+      const weightRes = await fetch('/api/weight', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          date: new Date(weightDate).toISOString(),
+          date: new Date(recordDate).toISOString(),
           value: weightValue
         })
       })
 
-      if (res.ok) {
-        await res.json()
-        
-        // 前日比の計算
+      if (weightRes.ok) {
         let diff = 0
         if (latestWeight) {
           diff = weightValue - latestWeight.value
         }
-
-        // 増加した場合のみ副業メッセージを表示
         if (diff > 0) {
           setShowSideJob(true)
         } else {
           setShowSideJob(false)
         }
-
-        const isToday = weightDate === todayStr
-        setMessage(`体重を記録しました: ${weightValue}kg${isToday ? '' : ` (${weightDate})`}`)
+        const isToday = recordDate === todayStr
+        setMessage(`体重を記録しました: ${weightValue}kg${isToday ? '' : ` (${recordDate})`}`)
         setWeight('')
-        
-        // データを再取得
         await fetchLatestWeight()
         await fetchPreviousWeight()
       } else {
-        setMessage('保存に失敗しました')
+        setMessage('体重の保存に失敗しました')
+      }
+
+      // 副業時間を保存（入力がある場合のみ）
+      if (minutes !== null) {
+        const sideJobRes = await fetch('/api/sidejob', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date: new Date(recordDate).toISOString(),
+            minutes: minutes,
+            memo: sideJobMemo || null
+          })
+        })
+
+        if (sideJobRes.ok) {
+          setSideJobMessage(`副業時間を記録しました: ${minutes}分`)
+          setSideJobMinutes('')
+          setSideJobMemo('')
+          setIsTimerRunning(false)
+          setElapsedSeconds(0)
+          setStartTime(null)
+          await fetchSideJobStats()
+        } else {
+          setSideJobMessage('副業時間の保存に失敗しました')
+        }
       }
     } catch (error) {
       console.error('Error:', error)
       setMessage('エラーが発生しました')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleSideJobSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!sideJobMinutes) {
-      setSideJobMessage('作業時間を入力してください')
-      return
-    }
-
-    const minutes = parseInt(sideJobMinutes)
-    if (isNaN(minutes) || minutes <= 0) {
-      setSideJobMessage('有効な時間を入力してください')
-      return
-    }
-
-    setSideJobLoading(true)
-    setSideJobMessage('')
-
-    try {
-      const res = await fetch('/api/sidejob', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: new Date().toISOString(),
-          minutes: minutes,
-          memo: sideJobMemo || null
-        })
-      })
-
-      if (res.ok) {
-        setSideJobMessage(`副業時間を記録しました: ${minutes}分`)
-        setSideJobMinutes('')
-        setSideJobMemo('')
-        
-        // タイマーをリセット
-        setIsTimerRunning(false)
-        setElapsedSeconds(0)
-        setStartTime(null)
-        
-        // 統計を再取得
-        await fetchSideJobStats()
-      } else {
-        setSideJobMessage('保存に失敗しました')
-      }
-    } catch (error) {
-      console.error('Error:', error)
-      setSideJobMessage('エラーが発生しました')
-    } finally {
-      setSideJobLoading(false)
     }
   }
 
@@ -278,6 +252,29 @@ export default function Home() {
         {/* 推移グラフ - 一番上に配置 */}
         <WeightAndSideJobChart />
 
+        {/* 共通日付ピッカー・保存ボタン */}
+        <div className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4">
+          <label htmlFor="recordDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+            記録日
+          </label>
+          <input
+            id="recordDate"
+            type="date"
+            value={recordDate}
+            onChange={(e) => setRecordDate(e.target.value)}
+            max={todayStr}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+          />
+          <button
+            type="button"
+            onClick={handleCombinedSubmit}
+            disabled={loading}
+            className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+          >
+            {loading ? '保存中...' : '保存'}
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 第1カラム: 体重記録 */}
           <div className="space-y-4">
@@ -291,21 +288,7 @@ export default function Home() {
             {today}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="weightDate" className="block text-sm font-medium text-gray-700 mb-2">
-                日付
-              </label>
-              <input
-                id="weightDate"
-                type="date"
-                value={weightDate}
-                onChange={(e) => setWeightDate(e.target.value)}
-                max={todayStr}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-                disabled={loading}
-              />
-            </div>
+          <div className="space-y-4">
             <div>
               <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-2">
                 体重 (kg)
@@ -321,15 +304,7 @@ export default function Home() {
                 disabled={loading}
               />
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? '保存中...' : '保存'}
-            </button>
-          </form>
+          </div>
 
           {message && (
             <div className={`mt-4 p-3 rounded-md ${
@@ -402,7 +377,7 @@ export default function Home() {
             </div>
           </div>
 
-          <form onSubmit={handleSideJobSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div>
               <label htmlFor="minutes" className="block text-sm font-medium text-gray-700 mb-2">
                 実施時間 (分)
@@ -415,7 +390,7 @@ export default function Home() {
                 onChange={(e) => setSideJobMinutes(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                 placeholder="30"
-                disabled={sideJobLoading}
+                disabled={loading}
               />
             </div>
 
@@ -431,18 +406,10 @@ export default function Home() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="ブログ記事執筆..."
                 rows={2}
-                disabled={sideJobLoading}
+                disabled={loading}
               />
             </div>
-
-            <button
-              type="submit"
-              disabled={sideJobLoading}
-              className="w-full bg-blue-600 text-white py-3 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {sideJobLoading ? '保存中...' : '保存'}
-            </button>
-          </form>
+          </div>
 
           {sideJobMessage && (
             <div className={`mt-4 p-3 rounded-md ${
