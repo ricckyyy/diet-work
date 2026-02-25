@@ -1,0 +1,129 @@
+name: PRリリースプレビュー
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  release-preview:
+    runs-on: ubuntu-latest
+    name: マージ後のリリース内容を確認
+
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.jsのセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 現在のバージョンを取得
+        id: get_version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 次のバージョンを計算
+        id: next_version
+        run: |
+          CURRENT_VERSION="${{ steps.get_version.outputs.current_version }}"
+          NEXT_VERSION=$(node -p "
+            const v = '$CURRENT_VERSION'.split('.');
+            v[2] = parseInt(v[2]) + 1;
+            v.join('.');
+          ")
+          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 前回のタグを取得
+        id: get_previous_tag
+        run: |
+          git fetch --tags
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -1 2>/dev/null || echo "")
+          echo "previous_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+
+      - name: リリースノートをプレビュー生成
+        id: release_notes
+        run: |
+          PREVIOUS_TAG="${{ steps.get_previous_tag.outputs.previous_tag }}"
+          NEW_VERSION="${{ steps.next_version.outputs.next_version }}"
+          REPO="${{ github.repository }}"
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
+            NOTES=$(printf '## 最初のリリース\n\n### 変更内容\n%s' "$COMMITS")
+          else
+            COMMITS=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || true)
+            COMPARE_URL="https://github.com/$REPO/compare/$PREVIOUS_TAG...v$NEW_VERSION"
+            if [ -z "$COMMITS" ]; then
+              COMMITS="- マイナーな改善と修正"
+            fi
+            NOTES=$(printf '## 変更内容\n\n%s\n\n---\nすべての変更を確認: %s' "$COMMITS" "$COMPARE_URL")
+          fi
+
+          {
+            echo "notes<<ENDOFNOTES"
+            echo "$NOTES"
+            echo "ENDOFNOTES"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: PRにリリースプレビューをコメント
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const currentVersion = '${{ steps.get_version.outputs.current_version }}';
+            const nextVersion = '${{ steps.next_version.outputs.next_version }}';
+            const previousTag = '${{ steps.get_previous_tag.outputs.previous_tag }}' || 'なし（最初のリリース）';
+            const notes = `${{ steps.release_notes.outputs.notes }}`;
+
+            const body = `## リリースプレビュー
+
+            このPRをマージすると以下のリリースが作成されます。
+
+            | 項目 | 内容 |
+            |------|------|
+            | 現在のバージョン | \`v${currentVersion}\` |
+            | 次のバージョン | \`v${nextVersion}\` |
+            | 前回のタグ | \`${previousTag}\` |
+
+            ### リリースノートプレビュー
+
+            ${notes}
+
+            ---
+            > このコメントはPRが更新されるたびに自動更新されます。
+            <!-- release-preview-comment -->`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.body.includes('<!-- release-preview-comment -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

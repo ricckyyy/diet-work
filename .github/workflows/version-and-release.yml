@@ -1,9 +1,17 @@
 name: バージョンアップとリリース
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'ドライラン（タグ・リリース作成をスキップ）'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -12,8 +20,8 @@ jobs:
   version-and-release:
     runs-on: ubuntu-latest
     name: バージョン自動更新とリリース作成
-    # バージョン更新コミットによる無限ループを防ぐ
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    # PRマージ時 or 手動実行のみ
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
 
     steps:
       - name: リポジトリのチェックアウト
@@ -21,6 +29,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - name: Node.jsのセットアップ
         uses: actions/setup-node@v4
@@ -63,8 +72,10 @@ jobs:
           TAG_NAME="v$NEXT_VERSION"
           echo "次のバージョン予定: $TAG_NAME"
 
-          # タグがすでに存在する場合はスキップして既存タグを使用
-          if git tag --list | grep -q "^$TAG_NAME$"; then
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "ドライランモード: バージョン更新・タグ作成をスキップ"
+            echo "new_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          elif git tag --list | grep -q "^$TAG_NAME$"; then
             echo "タグ $TAG_NAME はすでに存在します。package.jsonのみ更新します。"
             node -e "
               const fs = require('fs');
@@ -74,15 +85,18 @@ jobs:
             "
             git add package.json
             git commit -m "chore: バージョンを $NEXT_VERSION に更新 [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "新しいバージョン: $NEW_VERSION"
           else
             npm version patch -m "chore: バージョンを %s に更新 [skip ci]"
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "新しいバージョン: $NEW_VERSION"
           fi
 
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "新しいバージョン: $NEW_VERSION"
-
       - name: 変更をプッシュ
+        if: inputs.dry_run != true
         run: |
           git push origin HEAD:main --follow-tags
 
@@ -96,10 +110,7 @@ jobs:
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "最初のリリースです"
             COMMITS=$(git log --pretty=format:'- %s (%h)' --no-merges | head -10)
-            NOTES="## 🎉 最初のリリース
-
-### 変更内容
-$COMMITS"
+            NOTES=$(printf '## 最初のリリース\n\n### 変更内容\n%s' "$COMMITS")
           else
             echo "前回のタグ: $PREVIOUS_TAG"
             COMMITS=$(git log "$PREVIOUS_TAG"..HEAD --pretty=format:'- %s (%h)' --no-merges | grep -v 'chore: バージョンを' || true)
@@ -107,12 +118,7 @@ $COMMITS"
             if [ -z "$COMMITS" ]; then
               COMMITS="- マイナーな改善と修正"
             fi
-            NOTES="## 📝 変更内容
-
-$COMMITS
-
----
-🔍 **すべての変更を確認**: $COMPARE_URL"
+            NOTES=$(printf '## 変更内容\n\n%s\n\n---\nすべての変更を確認: %s' "$COMMITS" "$COMPARE_URL")
           fi
 
           {
@@ -122,18 +128,31 @@ $COMMITS
           } >> "$GITHUB_OUTPUT"
 
       - name: GitHubリリースを作成
-        uses: softprops/action-gh-release@v2
+        if: inputs.dry_run != true
+        uses: actions/github-script@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.bump_version.outputs.new_version }}
-          name: Release v${{ steps.bump_version.outputs.new_version }}
-          body: ${{ steps.release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
+          script: |
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: 'v${{ steps.bump_version.outputs.new_version }}',
+              name: 'Release v${{ steps.bump_version.outputs.new_version }}',
+              body: `${{ steps.release_notes.outputs.notes }}`,
+              draft: false,
+              prerelease: false,
+            });
 
       - name: リリース完了サマリー
         run: |
-          echo "✅ バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }}"
-          echo "✅ リリース v${{ steps.bump_version.outputs.new_version }} を作成しました"
-          echo "🔗 https://github.com/${{ github.repository }}/releases/tag/v${{ steps.bump_version.outputs.new_version }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🧪 ドライラン完了"
+            echo "バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }} になる予定"
+            echo "リリースノート:"
+            echo "${{ steps.release_notes.outputs.notes }}"
+          else
+            echo "✅ バージョン ${{ steps.get_version.outputs.current_version }} → ${{ steps.bump_version.outputs.new_version }}"
+            echo "✅ リリース v${{ steps.bump_version.outputs.new_version }} を作成しました"
+            echo "🔗 https://github.com/${{ github.repository }}/releases/tag/v${{ steps.bump_version.outputs.new_version }}"
+          fi
