@@ -24,6 +24,12 @@ export default async function Header() {
               ホーム
             </Link>
             <Link
+              href="/graph"
+              className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              グラフ
+            </Link>
+            <Link
               href="/health-record"
               className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
             >
@@ -56,6 +62,12 @@ export default async function Header() {
               className="text-xs text-gray-600 hover:text-blue-600 transition-colors"
             >
               ホーム
+            </Link>
+            <Link
+              href="/graph"
+              className="text-xs text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              グラフ
             </Link>
             <Link
               href="/health-record"

@@ -32,7 +32,12 @@ interface ChartDataPoint {
   minutes: number | null
 }
 
-export default function WeightAndSideJobChart() {
+interface Props {
+  height?: number
+  limit?: number
+}
+
+export default function WeightAndSideJobChart({ height = 160, limit = 30 }: Props) {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
@@ -40,16 +45,17 @@ export default function WeightAndSideJobChart() {
   useEffect(() => {
     setMounted(true)
     fetchData()
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit])
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      
+
       // 体重データと副業データを並行して取得
       const [weightRes, sideJobRes] = await Promise.all([
-        fetch('/api/weight/history?limit=30'),
-        fetch('/api/sidejob/list?limit=30')
+        fetch(`/api/weight/history?limit=${limit}`),
+        fetch(`/api/sidejob/list?limit=${limit}`)
       ])
 
       if (!weightRes.ok || !sideJobRes.ok) {
@@ -91,7 +97,7 @@ export default function WeightAndSideJobChart() {
         }
       })
 
-      // 日付順にソート
+      // 日付順にソート（APIがdesc返却のため昇順に並べ直す）
       const sortedData = Array.from(dataMap.entries())
         .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
         .map(([, data]) => data)
@@ -104,11 +110,13 @@ export default function WeightAndSideJobChart() {
     }
   }
 
+  const xAxisInterval = limit > 30 ? Math.floor(limit / 10) : 0
+
   if (loading || !mounted) {
     return (
       <div className="bg-white rounded-lg shadow-md p-3">
         <h2 className="text-sm font-bold text-gray-700 mb-2">📈 推移グラフ</h2>
-        <div className="flex items-center justify-center h-40">
+        <div className="flex items-center justify-center" style={{ height }}>
           <p className="text-gray-500 text-sm">読み込み中...</p>
         </div>
       </div>
@@ -119,7 +127,7 @@ export default function WeightAndSideJobChart() {
     return (
       <div className="bg-white rounded-lg shadow-md p-3">
         <h2 className="text-sm font-bold text-gray-700 mb-2">📈 推移グラフ</h2>
-        <div className="flex items-center justify-center h-40">
+        <div className="flex items-center justify-center" style={{ height }}>
           <p className="text-gray-500 text-sm">データがありません</p>
         </div>
       </div>
@@ -130,16 +138,17 @@ export default function WeightAndSideJobChart() {
     <div className="bg-white rounded-lg shadow-md p-3">
       <h2 className="text-sm font-bold text-gray-700 mb-2">📈 推移グラフ</h2>
 
-      <div className="w-full h-40">
+      <div className="w-full" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
               height={60}
+              interval={xAxisInterval}
             />
             <YAxis 
               yAxisId="left"
