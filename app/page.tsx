@@ -253,6 +253,12 @@ export default function Home() {
         {/* グラフ（縮小版・一番上） */}
         <WeightAndSideJobChart />
 
+        <div className="flex justify-end -mt-1">
+          <Link href="/graph" className="text-xs text-blue-600 hover:underline">
+            グラフを大きく表示 →
+          </Link>
+        </div>
+
         {/* 日付 + 保存ボタン */}
         <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm px-3 py-2">
           <label htmlFor="recordDate" className="text-xs font-medium text-gray-500 whitespace-nowrap w-10 shrink-0">

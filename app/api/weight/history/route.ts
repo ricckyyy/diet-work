@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
 		const weights = await prisma.weight.findMany({
 			where: { userId },
-			orderBy: { date: "asc" },
+			orderBy: { date: "desc" },
 			take: limit,
 		});
 
