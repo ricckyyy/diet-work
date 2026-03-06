@@ -5,6 +5,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import FlipCameraAndroidIcon from '@mui/icons-material/FlipCameraAndroid';
 import ChatIcon from '@mui/icons-material/Chat';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 
@@ -14,6 +15,7 @@ interface MeetingControlsProps {
   cameraOn: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
+  onSwitchCamera: () => void;
   onToggleChat: () => void;
   onLeave: () => void;
 }
@@ -24,6 +26,7 @@ export default function MeetingControls({
   cameraOn,
   onToggleMic,
   onToggleCamera,
+  onSwitchCamera,
   onToggleChat,
   onLeave
 }: MeetingControlsProps) {
@@ -80,6 +83,24 @@ export default function MeetingControls({
               {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
             </IconButton>
           </Tooltip>
+
+          {/* カメラ切り替えボタン（カメラON時のみ表示） */}
+          {cameraOn && (
+            <Tooltip title="カメラを切り替え">
+              <IconButton
+                color="inherit"
+                onClick={onSwitchCamera}
+                sx={{
+                  width: { xs: 44, sm: 52, md: 56 },
+                  height: { xs: 44, sm: 52, md: 56 },
+                  backgroundColor: 'grey.700',
+                  '&:hover': { backgroundColor: 'grey.600' }
+                }}
+              >
+                <FlipCameraAndroidIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* チャットコントロール */}
           <Tooltip title="チャットを開く">

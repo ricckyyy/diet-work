@@ -14,8 +14,10 @@ export default function TestMeetingPage() {
     chatOpen,
     controlsVisible,
     notification,
+    localStream,
     toggleMic,
     toggleCamera,
+    switchCamera,
     toggleChat,
     toggleControls,
     closeNotification,
@@ -32,6 +34,7 @@ export default function TestMeetingPage() {
       {/* ビデオエリア */}
       <VideoArea
         cameraOn={cameraOn}
+        localStream={localStream}
         onTap={toggleControls}
       />
 
@@ -42,6 +45,7 @@ export default function TestMeetingPage() {
         cameraOn={cameraOn}
         onToggleMic={toggleMic}
         onToggleCamera={toggleCamera}
+        onSwitchCamera={switchCamera}
         onToggleChat={toggleChat}
         onLeave={handleLeave}
       />
