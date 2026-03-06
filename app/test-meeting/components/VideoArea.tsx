@@ -1,16 +1,31 @@
 'use client'
 
+import { useRef, useEffect } from 'react';
 import { Grid2, Box, Typography } from '@mui/material';
 
 interface VideoAreaProps {
   cameraOn: boolean;
+  localStream: MediaStream | null;
   onTap: () => void;
 }
 
 export default function VideoArea({
   cameraOn,
+  localStream,
   onTap,
 }: VideoAreaProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    console.log('[VideoArea] localStream changed:', localStream ? `id=${localStream.id}, tracks=${localStream.getVideoTracks().length}` : 'null');
+    if (videoRef.current) {
+      console.log('[VideoArea] setting srcObject on video element');
+      videoRef.current.srcObject = localStream;
+    } else {
+      console.warn('[VideoArea] videoRef.current is null, cannot set srcObject');
+    }
+  }, [localStream]);
+
   return (
     <Grid2
       container
@@ -63,18 +78,20 @@ export default function VideoArea({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              backgroundColor: 'grey.800',
               aspectRatio: '16 / 9',
               width: '100%',
+              overflow: 'hidden',
+              position: 'relative',
             }}
           >
-            <Typography
-              variant="body1"
-              color="white"
-              sx={{ textAlign: 'center', px: 1, fontSize: { xs: '0.75rem', sm: '1rem' } }}
-            >
-              自分の映像（模擬）
-            </Typography>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </Box>
           {/* 下部：空きスペース */}
           <Box sx={{ flex: 1 }} />
